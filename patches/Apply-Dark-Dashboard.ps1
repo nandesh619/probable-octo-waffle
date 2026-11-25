@@ -162,9 +162,9 @@ if ($dialogs -notmatch '0x11, 0x14, 0x1B') {
     $dialogs = $dialogs.Replace('var cancel = new Button { Content = "Cancel", IsCancel = true, Width = 80 };',
         'var cancel = new Button { Content = "Cancel", IsCancel = true, Width = 80, Height = 30, Background = new SolidColorBrush(Color.FromRgb(0x18, 0x1D, 0x27)), Foreground = new SolidColorBrush(Color.FromRgb(0xE2, 0xE8, 0xF0)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x2A, 0x32, 0x44)) };')
     $dialogs = $dialogs.Replace('var tb = new TextBox { Text = def, Margin = new Thickness(0, 6, 0, 0), MinWidth = 340 };',
-        'var tb = new TextBox { Text = def, Margin = new Thickness(0, 6, 0, 0), MinWidth = 340, Padding = new Thickness(8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };')
+        'var tb = new TextBox { Text = def, Margin = new Thickness(0, 6, 0, 0), MinWidth = 340, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };')
     $dialogs = $dialogs.Replace('var tb = new TextBox { Text = def, MinWidth = 380 };',
-        'var tb = new TextBox { Text = def, MinWidth = 380, Padding = new Thickness(8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };')
+        'var tb = new TextBox { Text = def, MinWidth = 380, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };')
     Set-Content $dialogsPath $dialogs -Encoding UTF8
 }
 

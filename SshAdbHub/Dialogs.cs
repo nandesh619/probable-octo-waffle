@@ -32,7 +32,7 @@ public static class Dialogs
 
     public static string? Prompt(Window owner, string title, string label, string def = "")
     {
-        var tb = new TextBox { Text = def, Margin = new Thickness(0, 6, 0, 0), MinWidth = 340, Padding = new Thickness(8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };
+        var tb = new TextBox { Text = def, Margin = new Thickness(0, 6, 0, 0), MinWidth = 340, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };
         var panel = new StackPanel { Margin = new Thickness(14) };
         panel.Children.Add(new TextBlock { Text = label });
         panel.Children.Add(tb);
@@ -51,7 +51,7 @@ public static class Dialogs
         foreach (var (name, def) in fields)
         {
             panel.Children.Add(new TextBlock { Text = name, Margin = new Thickness(0, 6, 0, 2), FontWeight = FontWeights.SemiBold });
-            var tb = new TextBox { Text = def, MinWidth = 380, Padding = new Thickness(8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };
+            var tb = new TextBox { Text = def, MinWidth = 380, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x23)), Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x26, 0x2D, 0x3D)) };
             boxes[name] = tb;
             panel.Children.Add(tb);
         }
