@@ -225,50 +225,9 @@ $xaml = $xaml.Replace('</Window.Resources>', $theme + [Environment]::NewLine + '
 $xaml = $xaml.Replace('<Grid Margin="8">','<Grid Margin="12" Background="#F4F5FA" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">')
 $xaml = $xaml.Replace('<WrapPanel Grid.Row="0">','<WrapPanel Grid.Row="0" Margin="4,4,4,12">')
 
-# Rebuild the crowded connection bar as two aligned rows without changing control names or handlers.
-$topBar = @'
-        <Grid Grid.Row="0" Margin="4,4,4,10">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" LastChildFill="False">
-                <TextBlock DockPanel.Dock="Left" Text="SSH profile" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold" Foreground="#55586D"/>
-                <ComboBox x:Name="ProfileBox" Width="300" VerticalAlignment="Center" SelectionChanged="ProfileBox_SelectionChanged"/>
-                <Button Content="Add" Click="AddProfile_Click"/>
-                <Button Content="Edit" Click="EditProfile_Click"/>
-                <Button Content="Delete" Click="DeleteProfile_Click"/>
-                <Button x:Name="ConnectBtn" Content="Connect" FontWeight="SemiBold" Click="Connect_Click"/>
-            </DockPanel>
-            <WrapPanel Grid.Row="1" Margin="0,5,0,0">
-                <TextBlock Text="Startup &amp; behaviour" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold" Foreground="#74778B"/>
-                <CheckBox x:Name="AutoConnectChk" Content="Auto-connect on start" VerticalAlignment="Center" Margin="8,0,8,0" Click="AutoConnectChk_Click"/>
-                <CheckBox x:Name="AutoReconnectChk" Content="Auto-reconnect" VerticalAlignment="Center" Margin="8,0,8,0" Click="AutoReconnectChk_Click"/>
-                <CheckBox x:Name="StartupChk" Content="Start with Windows" VerticalAlignment="Center" Margin="8,0,8,0" Click="StartupChk_Click"/>
-                <CheckBox x:Name="StartMinChk" Content="Start minimized to tray" VerticalAlignment="Center" Margin="8,0,8,0" Click="StartMinChk_Click"/>
-                <CheckBox x:Name="CloseTrayChk" Content="Close button hides to tray" VerticalAlignment="Center" Margin="8,0,8,0" Click="CloseTrayChk_Click"/>
-            </WrapPanel>
-        </Grid>
-'@
-# Replace the existing connection bar by locating its actual named controls.
-# Do not replace an unrelated Grid.Row=0 WrapPanel (which caused duplicate x:Name fields).
-$topBarPattern = '(?s)<WrapPanel\\b[^>]*>.*?</WrapPanel>'
-$topBarMatches = [regex]::Matches($xaml, $topBarPattern)
-$topBarMatch = $null
-foreach ($candidate in $topBarMatches) {
-    $candidateText = $candidate.Value
-    if ($candidateText -match 'x:Name="ProfileBox"' -and
-        $candidateText -match 'x:Name="ConnectBtn"' -and
-        $candidateText -match 'x:Name="AutoConnectChk"' -and
-        $candidateText -match 'x:Name="AutoReconnectChk"' -and
-        $candidateText -match 'x:Name="StartupChk"' -and
-        $candidateText -match 'x:Name="StartMinChk"' -and
-        $candidateText -match 'x:Name="CloseTrayChk"') {
-        $topBarMatch = $candidate
-        break
-    }
-}
-if ($null -eq $topBarMatch) {
-    throw 'Could not uniquely locate the original SSH connection bar containing all seven named controls. Refusing to insert duplicate WPF controls.'
-}
-$xaml = $xaml.Substring(0, $topBarMatch.Index) + $topBar.Trim() + $xaml.Substring($topBarMatch.Index + $topBarMatch.Length)
+# Preserve the original SSH connection bar and its existing named controls.
+# A previous broad WrapPanel replacement could match an unrelated panel, producing
+# duplicate WPF x:Name fields at compile time. The existing controls remain functional.
 
 $xaml = $xaml.Replace('Margin="0,6,0,6" SelectionChanged="MainTabs_SelectionChanged"','Margin="0,8,0,8" SelectionChanged="MainTabs_SelectionChanged"')
 
