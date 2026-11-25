@@ -3,108 +3,55 @@ $xamlPath = 'SshAdbHub/MainWindow.xaml'
 $codePath = 'SshAdbHub/MainWindow.xaml.cs'
 $xaml = Get-Content $xamlPath -Raw
 
-# 1. Update Console (SSH) layout: clean labeled buttons, multiline input, full-width/height terminal output
-$newConsole = @'
-                    <DockPanel Grid.Row="0" LastChildFill="True">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button x:Name="ConsoleRunBtn" Content="▶  Run commands" MinWidth="116" Click="ConsoleRun_Click"/>
-                            <Button Content="■  Stop" MinWidth="76" Click="ConsoleStop_Click"/>
-                            <Button Content="Clear output" MinWidth="96" Click="ConsoleClear_Click"/>
-                        </StackPanel>
-                        <TextBox x:Name="ConsoleInput" MinHeight="72" Height="72" Padding="8,7"
-                                 AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
-                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                                 FontFamily="Consolas" ToolTip="Paste one command per line. Click Run commands or press Ctrl+Enter to send to the shell."
-                                 KeyDown="ConsoleInput_KeyDown"/>
-                    </DockPanel>
-                    <TextBlock Grid.Row="1" Text="SSH TERMINAL  •  Persistent session — current directory and shell state are retained."
-                               Margin="4,8,4,2" FontSize="11" FontWeight="SemiBold" Foreground="#718096"/>
-                    <TextBox x:Name="ConsoleOut" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="99" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="420" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>
-'@
-
-$consoleMarker = '<!-- ===== Console ===== -->'
-$markerIndex = $xaml.IndexOf($consoleMarker, [System.StringComparison]::Ordinal)
-if ($markerIndex -lt 0) { throw 'Console tab marker not found.' }
-$beforeConsole = $xaml.Substring(0, $markerIndex)
-$consolePart = $xaml.Substring($markerIndex + $consoleMarker.Length)
-$pattern = '(?s)<DockPanel Grid.Row="0">.*?</DockPanel>\s*<TextBox x:Name="ConsoleOut"[^>]*/>'
-$consolePart = [regex]::Replace($consolePart, $pattern, $newConsole.Trim(), 1)
-$consoleRows = '<Grid.RowDefinitions>' + [Environment]::NewLine + '                        <RowDefinition Height="Auto"/>' + [Environment]::NewLine + '                        <RowDefinition Height="Auto"/>' + [Environment]::NewLine + '                        <RowDefinition Height="*"/>' + [Environment]::NewLine + '                    </Grid.RowDefinitions>'
-$consolePart = [regex]::Replace($consolePart, '<Grid.RowDefinitions>.*?</Grid.RowDefinitions>', [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $consoleRows }, 1)
-if ($consolePart -notmatch 'ConsoleClear_Click') { throw 'Console XAML replacement failed.' }
-$xaml = $beforeConsole + $consoleMarker + $consolePart
-
-# 2. Stretch ScriptOut, LogBox, and other output boxes across available space
-$xaml = $xaml.Replace('<TextBox x:Name="ScriptOut" Grid.Row="3" Style="{StaticResource OutBox}"/>',
-                      '<TextBox x:Name="ScriptOut" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="240" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>')
-$xaml = $xaml.Replace('<TextBox x:Name="LogBox" Margin="4" Style="{StaticResource OutBox}"/>',
-                      '<TextBox x:Name="LogBox" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Style="{StaticResource OutBox}"/>')
-$xaml = $xaml.Replace('<TextBox x:Name="AdbOut" Grid.Row="5" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>',
-                      '<TextBox x:Name="AdbOut" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>')
-$xaml = $xaml.Replace('<TextBox x:Name="AppOut" Grid.Row="4" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>',
-                      '<TextBox x:Name="AppOut" Grid.Row="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>')
-$xaml = $xaml.Replace('<TextBox x:Name="HistoryOut" Grid.Row="2" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>',
-                      '<TextBox x:Name="HistoryOut" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,4,0,0" Style="{StaticResource OutBox}"/>')
-
-# 3. Window sizing and TabControl stretch
-$xaml = $xaml.Replace('Title="SSH + ADB Hub" Height="780" Width="1180" MinHeight="520" MinWidth="860"', 'Title="SSH + ADB Hub" Height="900" Width="1440" MinHeight="680" MinWidth="1040"')
-
-$xaml = [regex]::Replace($xaml, '<TabControl x:Name="MainTabs"([^>]*)>', {
-    param($m)
-    $attrs = $m.Groups[1].Value
-    foreach ($name in @('HorizontalContentAlignment','VerticalContentAlignment','HorizontalAlignment','VerticalAlignment')) {
-        $attributePattern = '(?<![\w:.-])' + [regex]::Escape($name) + '="[^"]*"'
-        if ([regex]::IsMatch($attrs, $attributePattern)) {
-            $attrs = [regex]::Replace($attrs, $attributePattern, ($name + '="Stretch"'), 1)
-        } else {
-            $attrs += ' ' + $name + '="Stretch"'
-        }
-    }
-    '<TabControl x:Name="MainTabs"' + $attrs + '>'
-}, 1)
-
-if ($xaml -notmatch 'TabStripPlacement="Left"') {
-    $xaml = [regex]::Replace($xaml, '<TabControl x:Name="MainTabs"([^>]*)>', {
-        param($m)
-        '<TabControl x:Name="MainTabs"' + $m.Groups[1].Value + ' TabStripPlacement="Left" Background="#F4F5FA" BorderThickness="0">' +
-        '<TabControl.Resources><Style TargetType="{x:Type TabItem}">' +
-        '<Setter Property="Width" Value="168"/><Setter Property="Padding" Value="16,13"/>' +
-        '<Setter Property="Margin" Value="6,4"/><Setter Property="HorizontalContentAlignment" Value="Left"/>' +
-        '<Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="#667085"/>' +
-        '<Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>' +
-        '<Style.Triggers><Trigger Property="IsSelected" Value="True">' +
-        '<Setter Property="Foreground" Value="#5B4AE8"/><Setter Property="Background" Value="#EEEAFE"/>' +
-        '<Setter Property="FontWeight" Value="SemiBold"/></Trigger></Style.Triggers></Style></TabControl.Resources>'
-    }, 1)
+function Replace-Once {
+    param([string]$InputText, [string]$Pattern, [string]$Replacement, [string]$Label)
+    $rx = [regex]$Pattern
+    $m = $rx.Match($InputText)
+    if (-not $m.Success) { throw "Pattern not found for: $Label" }
+    return $InputText.Substring(0, $m.Index) + $Replacement + $InputText.Substring($m.Index + $m.Length)
 }
 
-$xaml = $xaml.Replace('<Window x:Class="SshAdbHub.MainWindow"', '<Window x:Class="SshAdbHub.MainWindow" Background="#F4F5FA" Foreground="#20243A"')
-$xaml = $xaml.Replace('<Setter Property="Margin" Value="3"/>', '<Setter Property="Margin" Value="4,3"/>')
-$xaml = $xaml.Replace('<Setter Property="Padding" Value="10,4"/>', '<Setter Property="Padding" Value="12,6"/>' + [Environment]::NewLine + '            <Setter Property="MinHeight" Value="30"/>')
+# 1. Root Window sizing & palette
+$xaml = [regex]::Replace(
+    $xaml,
+    '<Window x:Class="SshAdbHub\.MainWindow"[^>]*>',
+    '<Window x:Class="SshAdbHub.MainWindow" Background="#F4F5FA" Foreground="#20243A"' + [Environment]::NewLine +
+    '        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"' + [Environment]::NewLine +
+    '        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"' + [Environment]::NewLine +
+    '        Title="SSH + ADB Hub" Height="900" Width="1440" MinHeight="680" MinWidth="1040"' + [Environment]::NewLine +
+    '        Loaded="Window_Loaded" Closing="Window_Closing">',
+    1
+)
 
-$theme = @'
-        <SolidColorBrush x:Key="AccentBrush" Color="#6557D9"/>
+# 2. Clean unified Window.Resources (consistent 32px control heights, centered ComboBox/Button content, light readable OutBox, left-rail TabControl)
+$newResources = @'
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#5B4AE8"/>
         <SolidColorBrush x:Key="AccentSoftBrush" Color="#EEEAFE"/>
         <SolidColorBrush x:Key="PageBrush" Color="#F4F5FA"/>
         <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#E4E6EF"/>
+        <SolidColorBrush x:Key="SubCardBrush" Color="#F8F9FC"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#E1E3EC"/>
         <SolidColorBrush x:Key="TextBrush" Color="#24243A"/>
-        <SolidColorBrush x:Key="MutedBrush" Color="#74778B"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#667085"/>
+
         <Style TargetType="{x:Type Button}">
             <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#45416F"/>
-            <Setter Property="BorderBrush" Value="#DDD9F3"/>
+            <Setter Property="Foreground" Value="#3D3A66"/>
+            <Setter Property="BorderBrush" Value="#D6D3EC"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="13,7"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="MinHeight" Value="34"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#EEEAFE"/>
-                    <Setter Property="BorderBrush" Value="#BDB5F0"/>
+                    <Setter Property="BorderBrush" Value="#B6ADF0"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
                     <Setter Property="Background" Value="#DED8FC"/>
@@ -114,31 +61,57 @@ $theme = @'
                 </Trigger>
             </Style.Triggers>
         </Style>
+
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="Foreground" Value="#24243A"/>
-            <Setter Property="BorderBrush" Value="#D9DCE8"/>
+            <Setter Property="BorderBrush" Value="#D5D8E4"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="9,6"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+
         <Style TargetType="{x:Type ComboBox}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="Foreground" Value="#24243A"/>
-            <Setter Property="BorderBrush" Value="#D9DCE8"/>
-            <Setter Property="Padding" Value="7,5"/>
+            <Setter Property="BorderBrush" Value="#D5D8E4"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="MinHeight" Value="32"/>
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Foreground" Value="#55586D"/>
-            <Setter Property="Margin" Value="8,4"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="Foreground" Value="#4E5368"/>
+            <Setter Property="Margin" Value="4,3"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="OutBox" TargetType="{x:Type TextBox}">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="#1E2433"/>
+            <Setter Property="BorderBrush" Value="#D9DCE8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
         <Style TargetType="{x:Type TabControl}">
-            <Setter Property="Background" Value="#F4F5FA"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
@@ -147,13 +120,13 @@ $theme = @'
                     <ControlTemplate TargetType="{x:Type TabControl}">
                         <Grid ClipToBounds="True" SnapsToDevicePixels="True">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="184"/>
+                                <ColumnDefinition Width="192"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Orientation="Vertical" IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
+                            <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,2,10,0" IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
                             <Border Grid.Column="1" Background="{TemplateBinding Background}"
                                     BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10"
-                                    Padding="6" MinWidth="0" MinHeight="0">
+                                    Padding="12" MinWidth="0" MinHeight="0">
                                 <ContentPresenter x:Name="PART_SelectedContentHost"
                                                   ContentSource="SelectedContent"
                                                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -164,19 +137,21 @@ $theme = @'
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style TargetType="{x:Type TabItem}">
-            <Setter Property="Width" Value="176"/>
-            <Setter Property="Padding" Value="16,13"/>
-            <Setter Property="Margin" Value="6,4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="Margin" Value="0,2"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="#686B80"/>
+            <Setter Property="Foreground" Value="#55586D"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type TabItem}">
-                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -193,47 +168,483 @@ $theme = @'
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style TargetType="{x:Type DataGrid}">
             <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#292A3E"/>
+            <Setter Property="Foreground" Value="#24243A"/>
             <Setter Property="BorderBrush" Value="#E1E3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RowBackground" Value="#FFFFFF"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8F8FC"/>
+            <Setter Property="AlternatingRowBackground" Value="#F8F9FC"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#ECECF3"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="RowHeight" Value="32"/>
-            <Setter Property="ColumnHeaderHeight" Value="36"/>
-            <Setter Property="Margin" Value="4"/>
+            <Setter Property="RowHeight" Value="30"/>
+            <Setter Property="ColumnHeaderHeight" Value="34"/>
+            <Setter Property="Margin" Value="0"/>
         </Style>
+
         <Style TargetType="{x:Type ListView}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E1E3EC"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Margin" Value="0"/>
         </Style>
+
         <Style TargetType="{x:Type ListBox}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E1E3EC"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0"/>
         </Style>
+    </Window.Resources>
 '@
 
-if (-not $xaml.Contains('</Window.Resources>')) { throw 'Window.Resources closing tag not found.' }
-$xaml = [regex]::Replace($xaml, '(?s)[ \t]*<Style TargetType="Button">.*?</Style>\s*', '', 1)
-$xaml = $xaml.Replace('</Window.Resources>', $theme + [Environment]::NewLine + '    </Window.Resources>')
-$xaml = $xaml.Replace('<Grid Margin="8">','<Grid Margin="12" Background="#F4F5FA" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">')
-$xaml = $xaml.Replace('<WrapPanel Grid.Row="0">','<WrapPanel Grid.Row="0" Margin="4,4,4,12">')
+$xaml = Replace-Once $xaml '(?s)\s*<Window\.Resources>.*?</Window\.Resources>' ([Environment]::NewLine + $newResources) 'Window.Resources'
 
-# Preserve the original SSH connection bar and its existing named controls.
-# A previous broad WrapPanel replacement could match an unrelated panel, producing
-# duplicate WPF x:Name fields at compile time. The existing controls remain functional.
+# 3. Root Grid background & spacing
+$xaml = Replace-Once $xaml '<Grid Margin="8">' '<Grid Margin="12" Background="#F4F5FA" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">' 'Root Grid'
 
-$xaml = $xaml.Replace('Margin="0,6,0,6" SelectionChanged="MainTabs_SelectionChanged"','Margin="0,8,0,8" SelectionChanged="MainTabs_SelectionChanged"')
+# 4. Rebuild ONLY the top connection bar (before MainTabs) into a clean card with 2 aligned rows
+$mainTabsIdx = $xaml.IndexOf('<TabControl x:Name="MainTabs"', [System.StringComparison]::Ordinal)
+if ($mainTabsIdx -lt 0) { throw 'MainTabs not found.' }
+$beforeTabs = $xaml.Substring(0, $mainTabsIdx)
+$fromTabs = $xaml.Substring($mainTabsIdx)
+
+$topBar = @'
+        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="10,8" Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" LastChildFill="False">
+                    <TextBlock DockPanel.Dock="Left" Text="SSH profile:" Width="88" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                    <ComboBox x:Name="ProfileBox" Width="320" VerticalAlignment="Center" SelectionChanged="ProfileBox_SelectionChanged"/>
+                    <Button Content="Add" Click="AddProfile_Click"/>
+                    <Button Content="Edit" Click="EditProfile_Click"/>
+                    <Button Content="Delete" Click="DeleteProfile_Click"/>
+                    <Button x:Name="ConnectBtn" Content="Connect" FontWeight="SemiBold" Click="Connect_Click"/>
+                </DockPanel>
+                <WrapPanel Grid.Row="1" Margin="0,6,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Startup &amp; behaviour:" VerticalAlignment="Center" Margin="2,0,12,0" FontWeight="SemiBold" Foreground="#667085"/>
+                    <CheckBox x:Name="AutoConnectChk" Content="Auto-connect this profile on start" Margin="0,2,14,2" Click="AutoConnectChk_Click"/>
+                    <CheckBox x:Name="AutoReconnectChk" Content="Auto-reconnect" Margin="0,2,14,2" Click="AutoReconnectChk_Click"/>
+                    <CheckBox x:Name="StartupChk" Content="Start with Windows" Margin="0,2,14,2" Click="StartupChk_Click"/>
+                    <CheckBox x:Name="StartMinChk" Content="Start minimized to tray" Margin="0,2,14,2" Click="StartMinChk_Click"/>
+                    <CheckBox x:Name="CloseTrayChk" Content="Close button hides to tray" Margin="0,2,0,2" Click="CloseTrayChk_Click"/>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        
+'@
+
+$beforeTabs = Replace-Once $beforeTabs '(?s)<!-- ===== top bar: SSH profile ===== -->\s*<WrapPanel Grid\.Row="0"[^>]*>.*?</WrapPanel>\s*' ("<!-- ===== top bar: SSH profile ===== -->" + [Environment]::NewLine + $topBar) 'Top bar'
+$xaml = $beforeTabs + $fromTabs
+
+# 5. MainTabs attributes (no inline TabControl.Resources so Window.Resources TabItem template applies!)
+$xaml = Replace-Once $xaml '<TabControl x:Name="MainTabs"[^>]*>' '<TabControl x:Name="MainTabs" Grid.Row="1" Margin="0,0,0,10" SelectionChanged="MainTabs_SelectionChanged" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TabStripPlacement="Left" Background="#FFFFFF" BorderThickness="0">' 'MainTabs'
+
+# 6. Files (SFTP) tab spacing
+$newFilesTab = @'
+            <!-- ===== Files ===== -->
+            <TabItem Header="Files (SFTP)">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="Upload" Click="Upload_Click"/>
+                            <Button Content="Download" Click="Download_Click"/>
+                            <Button Content="New folder" Click="NewFolder_Click"/>
+                            <Button Content="Delete" Click="DeleteFile_Click"/>
+                        </StackPanel>
+                        <Button DockPanel.Dock="Left" Content="Up" Click="Up_Click"/>
+                        <Button DockPanel.Dock="Left" Content="Refresh" Click="Refresh_Click"/>
+                        <TextBox x:Name="PathBox" Text="/" VerticalContentAlignment="Center" KeyDown="PathBox_KeyDown"/>
+                    </DockPanel>
+                    <ListView x:Name="FileListView" Grid.Row="1" SelectionMode="Extended"
+                              MouseDoubleClick="FileListView_MouseDoubleClick"
+                              AllowDrop="True" DragOver="FileDrag_DragOver" Drop="FileListView_Drop">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Name" Width="520" DisplayMemberBinding="{Binding Display}"/>
+                                <GridViewColumn Header="Size" Width="120" DisplayMemberBinding="{Binding SizeText}"/>
+                                <GridViewColumn Header="Modified" Width="180" DisplayMemberBinding="{Binding ModifiedText}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Files ===== -->\s*<TabItem Header="Files \(SFTP\)">.*?</TabItem>' $newFilesTab 'Files tab'
+
+# 7. Console (SSH) tab (3 rows: Input DockPanel, Header, Full-width Output)
+$newConsoleTab = @'
+            <!-- ===== Console ===== -->
+            <TabItem Header="Console (SSH)">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                            <Button x:Name="ConsoleRunBtn" Content="&#x25B6;  Run commands" MinWidth="126" Click="ConsoleRun_Click"/>
+                            <Button Content="&#x25A0;  Stop" MinWidth="80" Click="ConsoleStop_Click"/>
+                            <Button Content="Clear output" MinWidth="96" Click="ConsoleClear_Click"/>
+                        </StackPanel>
+                        <TextBox x:Name="ConsoleInput" MinHeight="74" Height="74" Padding="8,7"
+                                 VerticalContentAlignment="Top"
+                                 AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas" ToolTip="Paste one command per line. Click Run commands or press Ctrl+Enter to send to the shell."
+                                 KeyDown="ConsoleInput_KeyDown"/>
+                    </DockPanel>
+                    <TextBlock Grid.Row="1" Text="SSH TERMINAL  &#x2022;  Persistent session &#x2014; current directory and shell state are retained."
+                               Margin="3,8,3,4" FontSize="11" FontWeight="SemiBold" Foreground="#667085"/>
+                    <TextBox x:Name="ConsoleOut" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="99" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="320" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Console ===== -->\s*<TabItem Header="Console \(SSH\)">.*?</TabItem>' $newConsoleTab 'Console tab'
+
+# 8. ADB devices tab (aligned 94px labels across adb.exe, Device IP:port, adb shell; GridSplitter between grid and output)
+$newAdbTab = @'
+            <!-- ===== ADB ===== -->
+            <TabItem x:Name="AdbTab" Header="ADB devices">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="200" MinHeight="120"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0">
+                        <TextBlock DockPanel.Dock="Left" Text="adb.exe:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <Button DockPanel.Dock="Right" Content="Browse..." Click="AdbBrowse_Click"/>
+                        <TextBox x:Name="AdbPathBox" VerticalContentAlignment="Center" IsReadOnly="True"/>
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0,4,0,0">
+                        <TextBlock DockPanel.Dock="Left" Text="Device IP:port:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <Button DockPanel.Dock="Right" Content="Connect all saved" Click="AdbConnectAll_Click"/>
+                        <Button DockPanel.Dock="Right" Content="Pair..." Click="AdbPair_Click"/>
+                        <Button DockPanel.Dock="Right" Content="Connect" Click="AdbConnect_Click"/>
+                        <ComboBox x:Name="SavedDeviceBox" IsEditable="True"/>
+                    </DockPanel>
+
+                    <WrapPanel Grid.Row="2" Margin="0,4,0,6" VerticalAlignment="Center">
+                        <Button Content="Refresh list" Click="AdbRefresh_Click"/>
+                        <CheckBox x:Name="AdbAutoChk" Content="Auto-refresh (5s)" IsChecked="True" VerticalAlignment="Center" Margin="6,0,10,0"/>
+                        <Button Content="Disconnect selected" Click="AdbDisconnect_Click"/>
+                        <Button Content="Rename / notes..." Click="AdbRename_Click"/>
+                        <Button Content="Forget" Click="AdbForget_Click"/>
+                        <Button Content="Install APK..." Click="AdbInstall_Click"/>
+                        <Button Content="Screenshot" Click="AdbScreenshot_Click"/>
+                        <Button Content="Reboot" Click="AdbReboot_Click"/>
+                        <TextBlock x:Name="AdbStatus" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#667085"/>
+                    </WrapPanel>
+
+                    <DataGrid x:Name="DeviceGrid" Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False"
+                              HeadersVisibility="Column" SelectionMode="Single"
+                              AllowDrop="True" DragOver="FileDrag_DragOver" Drop="DeviceGrid_Drop"
+                              ToolTip="Drop an .apk on a device row to install it. Other files are copied to /sdcard/Download.">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Use" Binding="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" IsReadOnly="True" Width="160"/>
+                            <DataGridTextColumn Header="Serial / address" Binding="{Binding Serial}" IsReadOnly="True" Width="190"/>
+                            <DataGridTextColumn Header="State" Binding="{Binding State}" IsReadOnly="True" Width="100"/>
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" IsReadOnly="True" Width="180"/>
+                            <DataGridTextColumn Header="Details" Binding="{Binding Description}" IsReadOnly="True" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <GridSplitter Grid.Row="4" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+
+                    <DockPanel Grid.Row="5" Margin="0,2,0,4">
+                        <TextBlock DockPanel.Dock="Left" Text="adb shell:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <Button DockPanel.Dock="Right" Content="Run on selected" Click="AdbShell_Click"/>
+                        <TextBox x:Name="AdbShellInput" VerticalContentAlignment="Center" FontFamily="Consolas" KeyDown="AdbShellInput_KeyDown"/>
+                    </DockPanel>
+
+                    <TextBox x:Name="AdbOut" Grid.Row="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== ADB ===== -->\s*<TabItem x:Name="AdbTab" Header="ADB devices">.*?</TabItem>' $newAdbTab 'ADB tab'
+
+# 9. Scripts tab (resizable GridSplitter, aligned Run on / Arguments labels, full-width ScriptOut)
+$newScriptsTab = @'
+            <!-- ===== Scripts ===== -->
+            <TabItem Header="Scripts">
+                <Grid Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="280" MinWidth="200"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="360"/>
+                    </Grid.ColumnDefinitions>
+
+                    <DockPanel Grid.Column="0">
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Text="Scripts folder" FontWeight="SemiBold" Foreground="#4E5368" Margin="3,2,3,2"/>
+                            <TextBox x:Name="ScriptsFolderBox" IsReadOnly="True"/>
+                            <WrapPanel Margin="0,2,0,4">
+                                <Button Content="Change..." Click="ScriptsFolder_Click"/>
+                                <Button Content="Open" Click="ScriptsOpen_Click"/>
+                                <Button Content="Reload" Click="ScriptsReload_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
+                        <ListBox x:Name="ScriptList" DisplayMemberPath="Name" SelectionChanged="ScriptList_SelectionChanged"
+                                 AllowDrop="True" DragOver="FileDrag_DragOver" Drop="ScriptList_Drop"
+                                 ToolTip="Drop .sh / .ps1 / .bat files here to add them"/>
+                    </DockPanel>
+
+                    <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" ShowsPreview="True"/>
+
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="82"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Run on:" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <ComboBox x:Name="ScriptTarget" Grid.Row="0" Grid.Column="1" SelectedIndex="0" HorizontalAlignment="Stretch" MinWidth="260">
+                            <ComboBoxItem Content="Router (SSH, run with sh)"/>
+                            <ComboBoxItem Content="Android device(s) (ADB - ticked in ADB tab)"/>
+                            <ComboBoxItem Content="This PC (.ps1 / .bat / .cmd)"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Arguments:" VerticalAlignment="Center" Margin="2,4,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                            <Button DockPanel.Dock="Right" Content="Clear" Click="ScriptClear_Click"/>
+                            <Button DockPanel.Dock="Right" Content="Edit" Click="ScriptEdit_Click"/>
+                            <Button DockPanel.Dock="Right" Content="Stop" Click="ScriptStop_Click"/>
+                            <Button x:Name="ScriptRunBtn" DockPanel.Dock="Right" Content="Run" FontWeight="SemiBold" Click="ScriptRun_Click"/>
+                            <TextBox x:Name="ScriptArgs" VerticalContentAlignment="Center"/>
+                        </DockPanel>
+
+                        <TextBlock x:Name="ScriptDesc" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Foreground="#667085" Margin="3,6,3,6" TextWrapping="Wrap"/>
+                        <TextBox x:Name="ScriptOut" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="240" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Scripts ===== -->\s*<TabItem Header="Scripts">.*?</TabItem>' $newScriptsTab 'Scripts tab'
+
+# 10. Router dashboard tab (responsive 3-column summary cards, preserved WanIfaceBox/controls)
+$newDashTab = @'
+            <!-- ===== Router dashboard ===== -->
+            <TabItem x:Name="DashTab" Header="Router dashboard">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <WrapPanel Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,8">
+                        <TextBlock Text="WAN interface:" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBox x:Name="WanIfaceBox" Width="100" VerticalContentAlignment="Center" Text="wan"/>
+                        <Button Content="Refresh now" Click="DashRefresh_Click"/>
+                        <CheckBox x:Name="DashAutoChk" Content="Auto-refresh (5s)" IsChecked="True" VerticalAlignment="Center" Margin="8,0,12,0"/>
+                        <TextBlock x:Name="DashStatus" VerticalAlignment="Center" Foreground="#667085"/>
+                    </WrapPanel>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                            <StackPanel>
+                                <TextBlock Text="WAN" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
+                                <TextBlock x:Name="WanStatusText" Text="-" FontSize="22" FontWeight="Bold" Margin="0,4,0,2"/>
+                                <TextBlock x:Name="WanIpText" Foreground="#24243A"/>
+                                <TextBlock x:Name="WanInfoText" TextWrapping="Wrap" Foreground="#4E5368"/>
+                                <TextBlock x:Name="WanRateText" Margin="0,4,0,0" FontWeight="SemiBold" Foreground="#24243A"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                            <StackPanel>
+                                <TextBlock Text="ROUTER" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
+                                <TextBlock x:Name="SysModelText" Text="-" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" Margin="0,4,0,2"/>
+                                <TextBlock x:Name="SysHostText" TextWrapping="Wrap" Foreground="#4E5368"/>
+                                <TextBlock x:Name="SysUptimeText" Foreground="#4E5368"/>
+                                <TextBlock x:Name="SysLoadText" Foreground="#4E5368"/>
+                                <ProgressBar x:Name="MemBar" Height="10" Maximum="100" Margin="0,6,0,4"/>
+                                <TextBlock x:Name="MemText" Foreground="#4E5368"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="4" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                            <StackPanel>
+                                <TextBlock Text="WI-FI" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
+                                <TextBlock x:Name="ClientsCountText" Text="-" FontSize="22" FontWeight="Bold" Margin="0,4,0,2"/>
+                                <TextBlock x:Name="ClientsBandText" TextWrapping="Wrap" Foreground="#4E5368"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Border Grid.Row="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,8" Background="#F8F9FC">
+                        <WrapPanel VerticalAlignment="Center">
+                            <Button x:Name="BackupBtn" Content="Back up router config now" FontWeight="SemiBold" Click="Backup_Click"/>
+                            <Button Content="Open backups folder" Click="OpenBackups_Click"/>
+                            <TextBlock x:Name="BackupInfo" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
+                        </WrapPanel>
+                    </Border>
+
+                    <DataGrid x:Name="ClientGrid" Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Device" Binding="{Binding Hostname}" Width="160"/>
+                            <DataGridTextColumn Header="IP" Binding="{Binding Ip}" Width="120"/>
+                            <DataGridTextColumn Header="MAC" Binding="{Binding Mac}" Width="140"/>
+                            <DataGridTextColumn Header="Network" Binding="{Binding Radio}" Width="180"/>
+                            <DataGridTextColumn Header="Signal (dBm)" Binding="{Binding Signal}" Width="90"/>
+                            <DataGridTextColumn Header="Quality" Binding="{Binding SignalText}" Width="80"/>
+                            <DataGridTextColumn Header="RX rate" Binding="{Binding RxRate}" Width="100"/>
+                            <DataGridTextColumn Header="TX rate" Binding="{Binding TxRate}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Router dashboard ===== -->\s*<TabItem x:Name="DashTab" Header="Router dashboard">.*?</TabItem>' $newDashTab 'DashTab'
+
+# 11. Apps (ADB) tab (aligned Device/Filter labels, GridSplitter above AppOut)
+$newAppsTab = @'
+            <!-- ===== Apps (ADB) ===== -->
+            <TabItem x:Name="AppsTab" Header="Apps (ADB)">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="160"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="150" MinHeight="90"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0">
+                        <TextBlock DockPanel.Dock="Left" Text="Device:" Width="56" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <Button DockPanel.Dock="Right" Content="Load apps" FontWeight="SemiBold" Click="AppsLoad_Click"/>
+                        <ComboBox x:Name="AppDeviceBox" DisplayMemberPath="Label"/>
+                    </DockPanel>
+
+                    <WrapPanel Grid.Row="1" Margin="0,4,0,6" VerticalAlignment="Center">
+                        <TextBlock Text="Filter:" Width="56" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBox x:Name="AppFilterBox" Width="240" VerticalContentAlignment="Center" TextChanged="AppFilter_Changed"/>
+                        <ComboBox x:Name="AppKindBox" Width="140" SelectedIndex="0" SelectionChanged="AppFilter_Changed">
+                            <ComboBoxItem Content="All apps"/>
+                            <ComboBoxItem Content="User apps"/>
+                            <ComboBoxItem Content="System apps"/>
+                            <ComboBoxItem Content="Disabled"/>
+                            <ComboBoxItem Content="Removed"/>
+                        </ComboBox>
+                        <Button Content="Tick all shown" Click="AppTickAll_Click"/>
+                        <Button Content="Untick all" Click="AppUntickAll_Click"/>
+                        <TextBlock x:Name="AppStatus" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#667085"/>
+                    </WrapPanel>
+
+                    <DataGrid x:Name="AppGrid" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Use" Binding="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                            <DataGridTextColumn Header="Package" Binding="{Binding Package}" IsReadOnly="True" Width="*"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding Kind}" IsReadOnly="True" Width="90"/>
+                            <DataGridTextColumn Header="State" Binding="{Binding State}" IsReadOnly="True" Width="95"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <WrapPanel Grid.Row="3" Margin="0,6,0,2">
+                        <Button Content="Uninstall" Click="AppUninstall_Click"/>
+                        <Button Content="Disable" Click="AppDisable_Click"/>
+                        <Button Content="Enable" Click="AppEnable_Click"/>
+                        <Button Content="Restore removed" Click="AppRestore_Click"/>
+                        <Button Content="Force stop" Click="AppForceStop_Click"/>
+                        <Button Content="Clear data" Click="AppClearData_Click"/>
+                        <Button Content="Export APK..." Click="AppExport_Click"/>
+                    </WrapPanel>
+
+                    <GridSplitter Grid.Row="4" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+
+                    <TextBox x:Name="AppOut" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Apps \(ADB\) ===== -->\s*<TabItem x:Name="AppsTab" Header="Apps \(ADB\)">.*?</TabItem>' $newAppsTab 'AppsTab'
+
+# 12. Run history tab (restored Copy/Clear buttons, Target=* column, GridSplitter above HistoryOut)
+$newHistoryTab = @'
+            <!-- ===== History ===== -->
+            <TabItem Header="Run history">
+                <Grid Margin="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="240" MinHeight="120"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+                    <WrapPanel Grid.Row="0" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <Button Content="Copy output" Click="HistoryCopy_Click"/>
+                        <Button Content="Clear history" Click="HistoryClear_Click"/>
+                        <TextBlock Text="Last 200 script runs are kept." VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#667085"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="HistoryGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                              HeadersVisibility="Column" SelectionMode="Single" SelectionChanged="HistoryGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Time" Binding="{Binding TimeText}" Width="155"/>
+                            <DataGridTextColumn Header="Script" Binding="{Binding Script}" Width="210"/>
+                            <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="*"/>
+                            <DataGridTextColumn Header="Exit" Binding="{Binding ExitText}" Width="70"/>
+                            <DataGridTextColumn Header="Duration" Binding="{Binding DurationText}" Width="95"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <GridSplitter Grid.Row="2" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+                    <TextBox x:Name="HistoryOut" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                </Grid>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== History ===== -->\s*<TabItem Header="Run history">.*?</TabItem>' $newHistoryTab 'History tab'
+
+# 13. Log tab
+$newLogTab = @'
+            <!-- ===== Log ===== -->
+            <TabItem Header="Log">
+                <TextBox x:Name="LogBox" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Style="{StaticResource OutBox}"/>
+            </TabItem>
+'@
+$xaml = Replace-Once $xaml '(?s)<!-- ===== Log ===== -->\s*<TabItem Header="Log">.*?</TabItem>' $newLogTab 'Log tab'
+
+# 14. StatusBar styling
+$newStatusBar = @'
+        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="8" Padding="10,5">
+            <StatusBar Background="Transparent" BorderThickness="0">
+                <TextBlock x:Name="StatusText" Text="Disconnected" Foreground="#4E5368"/>
+            </StatusBar>
+        </Border>
+'@
+$xaml = Replace-Once $xaml '(?s)<StatusBar Grid\.Row="2">.*?</StatusBar>' $newStatusBar 'StatusBar'
 
 Set-Content -Path $xamlPath -Value $xaml -Encoding UTF8
 
-# 4. Ensure ConsoleClear_Click exists in MainWindow.xaml.cs without clobbering Apply-Persistent-Shell.ps1
+# 15. Ensure ConsoleClear_Click exists in MainWindow.xaml.cs without clobbering Apply-Persistent-Shell.ps1
 $code = Get-Content $codePath -Raw
 if ($code -notmatch 'ConsoleClear_Click') {
     $clearMethod = @'
@@ -250,4 +661,4 @@ if ($code -notmatch 'ConsoleClear_Click') {
     Set-Content -Path $codePath -Value $code -Encoding UTF8
 }
 
-Write-Host 'Console layout, stretched output boxes (ConsoleOut, ScriptOut, LogBox, AdbOut, AppOut, HistoryOut), and ConsoleClear_Click applied.'
+Write-Host 'Console layout, unified light palette, aligned grids/labels, resizable splitters, and ConsoleClear_Click applied.'

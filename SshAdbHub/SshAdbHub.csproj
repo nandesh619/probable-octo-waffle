@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms is only used for the system tray icon (NotifyIcon) -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>SshAdbHub</AssemblyName>
+    <RootNamespace>SshAdbHub</RootNamespace>
+    <Version>0.2.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- avoid WPF/WinForms type-name clashes (Button, MessageBox, Application ...) -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SSH.NET" Version="2026.0.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Sample scripts are copied next to the exe and are NOT bundled into the single file -->
+    <Content Include="scripts\**\*.*" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+</Project>
