@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -129,7 +129,7 @@ public partial class MainWindow
         if (G("WAN.missing") == "1")
         {
             WanStatusText.Text = "Not found";
-            WanStatusText.Foreground = Brushes.DarkOrange;
+            WanStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0xFB, 0xBF, 0x24));
             WanIpText.Text = "Interface '" + WanIfaceBox.Text.Trim() + "' does not exist";
             WanInfoText.Text = "";
             WanRateText.Text = "";
@@ -138,7 +138,7 @@ public partial class MainWindow
         {
             var isUp = G("WAN.up") is "1" or "true";
             WanStatusText.Text = isUp ? "Connected" : "Down";
-            WanStatusText.Foreground = isUp ? Brushes.SeaGreen : Brushes.Firebrick;
+            WanStatusText.Foreground = isUp ? new SolidColorBrush(Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
             WanIpText.Text = G("WAN.ip") is { Length: > 0 } ip ? "IP " + ip : "No IPv4 address";
             var info = G("WAN.proto");
             if (long.TryParse(G("WAN.uptime"), out var wu) && isUp) info += (info.Length > 0 ? "  -  " : "") + "up " + FormatDuration(wu);
@@ -221,14 +221,14 @@ public partial class MainWindow
         if (p == null) { BackupInfo.Text = ""; return; }
         if (p.LastBackup is not DateTime t)
         {
-            BackupInfo.Text = "⚠ No config backup taken yet for this router. Back up before changing settings.";
-            BackupInfo.Foreground = Brushes.DarkOrange;
+            BackupInfo.Text = "âš  No config backup taken yet for this router. Back up before changing settings.";
+            BackupInfo.Foreground = new SolidColorBrush(Color.FromRgb(0xFB, 0xBF, 0x24));
             return;
         }
         var days = (DateTime.Now - t).TotalDays;
         BackupInfo.Text = $"Last backup: {t:yyyy-MM-dd HH:mm} ({(days < 1 ? "today" : $"{(int)days} days ago")})" +
-                          (days > 30 ? "   ⚠ older than 30 days" : "");
-        BackupInfo.Foreground = days > 30 ? Brushes.DarkOrange : SystemColors.ControlTextBrush;
+                          (days > 30 ? "   âš  older than 30 days" : "");
+        BackupInfo.Foreground = days > 30 ? new SolidColorBrush(Color.FromRgb(0xFB, 0xBF, 0x24)) : new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1));
     }
 
     private async void Backup_Click(object sender, RoutedEventArgs e)
@@ -336,3 +336,4 @@ cat /tmp/dhcp.leases 2>/dev/null
 echo "@@END"
 """;
 }
+

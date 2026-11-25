@@ -1,9 +1,13 @@
 $ErrorActionPreference = 'Stop'
 $project = 'SshAdbHub'
 $xamlPath = Join-Path $project 'MainWindow.xaml'
+$csprojPath = Join-Path $project 'SshAdbHub.csproj'
+$iconPath = Join-Path $project 'app.ico'
 if (-not (Test-Path $xamlPath)) { throw "Missing $xamlPath" }
+if (-not (Test-Path $iconPath)) { throw "Missing $iconPath" }
 [xml]$xml = Get-Content $xamlPath -Raw
 $xaml = Get-Content $xamlPath -Raw
+$csproj = Get-Content $csprojPath -Raw
 $code = (Get-ChildItem $project -Filter '*.cs' -File | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 
 # 1. Check all XAML event handlers exist in code
@@ -17,17 +21,26 @@ foreach ($eventName in $events) {
 }
 if ($missing.Count) { throw ('XAML event handlers missing from code: ' + ($missing -join ', ')) }
 
-# 2. Check no duplicate x:Name attributes exist in MainWindow.xaml
-$names = [regex]::Matches($xaml, 'x:Name="([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+# 2. Check no duplicate x:Name attributes exist in the Window visual tree (ControlTemplates in Window.Resources have isolated namescopes for PART_* elements)
+$visualTree = [regex]::Replace($xaml, '(?s)<Window\.Resources>.*?</Window\.Resources>', '')
+$names = [regex]::Matches($visualTree, 'x:Name="([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
 $dups = $names | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Name }
 if ($dups) { throw ('Duplicate x:Name found in MainWindow.xaml: ' + ($dups -join ', ')) }
 
-# 3. Check essential named controls were not clobbered
-foreach ($req in @('ProfileBox','ConnectBtn','WanIfaceBox','HistoryGrid','HistoryOut','ScriptOut','ConsoleOut','ConsoleInput','AdbOut','AppOut','LogBox','HomeTab','DashTab','AdbTab','AppsTab','StatusText')) {
+# 3. Check essential named controls and Router dashboard placement
+foreach ($req in @('ProfileBox','ConnectBtn','WanIfaceBox','HistoryGrid','HistoryOut','ScriptOut','ConsoleOut','ConsoleInput','AdbOut','AppOut','LogBox','DashTab','AdbTab','AppsTab','StatusText')) {
   if ($names -notcontains $req) { throw "Required x:Name missing from MainWindow.xaml: $req" }
 }
+if ($names -contains 'HomeTab') { throw 'HomeTab should be removed; Router dashboard must be the first tab.' }
+$firstTab = [regex]::Match($xaml, '<TabControl x:Name="MainTabs"[^>]*>\s*(?:<!--.*?-->\s*)*<TabItem\s+x:Name="([^"]+)"')
+if (-not $firstTab.Success -or $firstTab.Groups[1].Value -ne 'DashTab') { throw 'DashTab (Router dashboard) is not the first tab in MainTabs.' }
 
-# 4. Style & layout invariants
+# 4. Icon & project invariants
+if ($xaml -notmatch 'Icon="app\.ico"') { throw 'MainWindow.xaml is missing Icon="app.ico".' }
+if ($csproj -notmatch '<ApplicationIcon>app\.ico</ApplicationIcon>') { throw 'SshAdbHub.csproj is missing ApplicationIcon.' }
+if ($csproj -notmatch '<Resource Include="app\.ico"') { throw 'SshAdbHub.csproj is missing app.ico Resource.' }
+
+# 5. Style & layout invariants
 $buttonStyles = [regex]::Matches($xaml, '<Style\s+TargetType="(?:\{x:Type\s+)?Button\}?"').Count
 if ($buttonStyles -ne 1) { throw "Expected exactly one implicit Button style; found $buttonStyles" }
 $tabItemStyles = [regex]::Matches($xaml, '<Style\s+TargetType="(?:\{x:Type\s+)?TabItem\}?"').Count
@@ -35,7 +48,9 @@ if ($tabItemStyles -ne 1) { throw "Expected exactly one implicit TabItem style; 
 if ($xaml -notmatch 'x:Name="ConsoleOut"[^>]*Grid.Row="2"[^>]*Grid.ColumnSpan="99"') { throw 'Console output is not configured to stretch across the workspace.' }
 if ($xaml -notmatch 'x:Name="ConsoleInput"[^>]*AcceptsReturn="True"') { throw 'Console input is not multiline.' }
 if ($xaml -notmatch '<TabControl x:Name="MainTabs"[^>]*HorizontalContentAlignment="Stretch"[^>]*VerticalContentAlignment="Stretch"') { throw 'MainTabs content is not configured to stretch.' }
-if ($xaml -match '<Style TargetType="\{x:Type TabItem\}">[\s\S]*?<Setter Property="HorizontalContentAlignment" Value="Left"/>') { throw 'TabItem HorizontalContentAlignment must be Stretch so selected tab content fills the pane.' }
+$tabItemStyleBlock = [regex]::Match($xaml, '(?s)<Style TargetType="\{x:Type TabItem\}">.*?</Style>').Value
+if ($tabItemStyleBlock -notmatch 'Property="HorizontalContentAlignment" Value="Stretch"') { throw 'TabItem HorizontalContentAlignment must be Stretch so selected tab content fills the pane.' }
+if ($xaml -notmatch 'PART_EditableTextBox') { throw 'ComboBox template must include PART_EditableTextBox for editable SavedDeviceBox.' }
 if ($xaml -notmatch '<GridSplitter') { throw 'Expected GridSplitter for resizable panes.' }
 
-Write-Host 'PASS: XAML parses, zero duplicate x:Name, event handlers verified, single Button/TabItem styles, full-width layouts and GridSplitters verified.'
+Write-Host 'PASS: XAML parses, DashTab is first tab, app.ico wired, editable ComboBox & dark theme styles verified.'

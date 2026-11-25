@@ -224,6 +224,7 @@ public partial class MainWindow : Window
             _connectedLabel = $"{p.Username}@{p.Host}:{p.Port}";
             _connectedProfile = p;
             Log($"Connected to {_connectedLabel}");
+            if (ReferenceEquals(MainTabs.SelectedItem, DashTab)) _ = RefreshDashboardAsync();
             if (!_ssh.SftpAvailable)
                 Log("SFTP unavailable: " + _ssh.SftpError + "  (OpenWrt: opkg install openssh-sftp-server)");
             else
@@ -426,11 +427,6 @@ public partial class MainWindow : Window
             e.Handled = true;
             ConsoleRun_Click(sender, e);
         }
-    }
-    private void HomeNavigate_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: string value } && int.TryParse(value, out var index) && index >= 0 && index < MainTabs.Items.Count)
-            MainTabs.SelectedIndex = index;
     }
 }
 

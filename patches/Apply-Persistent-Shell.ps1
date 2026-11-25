@@ -3,6 +3,7 @@ $servicePath = 'SshAdbHub/SshService.cs'
 $windowPath = 'SshAdbHub/MainWindow.xaml.cs'
 $service = Get-Content $servicePath -Raw
 if ($service -notmatch 'using System.Text;') { $service = 'using System.Text;' + [Environment]::NewLine + $service }
+if ($service -notmatch 'using System.Text.RegularExpressions;') { $service = 'using System.Text.RegularExpressions;' + [Environment]::NewLine + $service }
 if ($service -notmatch 'private ShellStream\? _shell') {
     $service = $service.Replace('    private SftpClient? _sftp;', '    private SftpClient? _sftp;' + [Environment]::NewLine + '    private ShellStream? _shell;')
 }
@@ -28,12 +29,16 @@ if ($service -notmatch 'public void StartShell\(') {
         _shell.Flush();
     }
 
+    private static readonly Regex AnsiRx = new(@"\x1B(?:\][^\x07\x1B]*(?:\x07|\x1B\\)|\[[0-9;?]*[ -/]*[@-~])", RegexOptions.Compiled);
+
     public string ReadShellOutput()
     {
         if (!ShellStarted || !_shell!.DataAvailable) return "";
         var buffer = new byte[8192];
         var count = _shell.Read(buffer, 0, buffer.Length);
-        return count > 0 ? Encoding.UTF8.GetString(buffer, 0, count) : "";
+        if (count <= 0) return "";
+        var raw = Encoding.UTF8.GetString(buffer, 0, count);
+        return AnsiRx.Replace(raw, "");
     }
 
     public void InterruptShell()

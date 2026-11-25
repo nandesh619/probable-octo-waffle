@@ -11,93 +11,345 @@ function Replace-Once {
     return $InputText.Substring(0, $m.Index) + $Replacement + $InputText.Substring($m.Index + $m.Length)
 }
 
-# 1. Root Window sizing & palette
+# 1. Root Window sizing & Vantage obsidian dark palette
 $xaml = [regex]::Replace(
     $xaml,
     '<Window x:Class="SshAdbHub\.MainWindow"[^>]*>',
-    '<Window x:Class="SshAdbHub.MainWindow" Background="#F4F5FA" Foreground="#20243A"' + [Environment]::NewLine +
+    '<Window x:Class="SshAdbHub.MainWindow" Background="#0B0D12" Foreground="#F1F5F9"' + [Environment]::NewLine +
     '        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"' + [Environment]::NewLine +
     '        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"' + [Environment]::NewLine +
-    '        Title="SSH + ADB Hub" Height="900" Width="1440" MinHeight="680" MinWidth="1040"' + [Environment]::NewLine +
+    '        Title="SSH + ADB Hub" Icon="app.ico" Height="900" Width="1440" MinHeight="680" MinWidth="1040"' + [Environment]::NewLine +
     '        Loaded="Window_Loaded" Closing="Window_Closing">',
     1
 )
 
-# 2. Clean unified Window.Resources (consistent 32px control heights, centered ComboBox/Button content, light readable OutBox, left-rail TabControl)
+# 2. Premium Obsidian + Lime Dark Theme Resources (consistent 32px heights, custom dark controls, editable ComboBox support)
 $newResources = @'
     <Window.Resources>
-        <SolidColorBrush x:Key="AccentBrush" Color="#5B4AE8"/>
-        <SolidColorBrush x:Key="AccentSoftBrush" Color="#EEEAFE"/>
-        <SolidColorBrush x:Key="PageBrush" Color="#F4F5FA"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="SubCardBrush" Color="#F8F9FC"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#E1E3EC"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#24243A"/>
-        <SolidColorBrush x:Key="MutedBrush" Color="#667085"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#B8E936"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#C7F24E"/>
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#9ECC26"/>
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#1A2214"/>
+        <SolidColorBrush x:Key="PageBrush" Color="#0B0D12"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#11141B"/>
+        <SolidColorBrush x:Key="SubCardBrush" Color="#161A23"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#242A38"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#8E98AB"/>
+        <SolidColorBrush x:Key="CyanBrush" Color="#38BDF8"/>
+        <SolidColorBrush x:Key="AmberBrush" Color="#FBBF24"/>
+        <SolidColorBrush x:Key="EmeraldBrush" Color="#4ADE80"/>
 
         <Style TargetType="{x:Type Button}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#3D3A66"/>
-            <Setter Property="BorderBrush" Value="#D6D3EC"/>
+            <Setter Property="Background" Value="#181D27"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#2A3244"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,4"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="MinHeight" Value="32"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#EEEAFE"/>
-                    <Setter Property="BorderBrush" Value="#B6ADF0"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#DED8FC"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.48"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#222938"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#3E4B66"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#2A3346"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AccentButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#B8E936"/>
+            <Setter Property="Foreground" Value="#0B0D12"/>
+            <Setter Property="BorderBrush" Value="#B8E936"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#C7F24E"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#C7F24E"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#9ECC26"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type TextBox}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#24243A"/>
-            <Setter Property="BorderBrush" Value="#D5D8E4"/>
+            <Setter Property="Background" Value="#161A23"/>
+            <Setter Property="Foreground" Value="#F1F5F9"/>
+            <Setter Property="CaretBrush" Value="#B8E936"/>
+            <Setter Property="SelectionBrush" Value="#365314"/>
+            <Setter Property="BorderBrush" Value="#262D3D"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="MinHeight" Value="32"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#B8E936"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A455E"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}" Margin="2,1">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#222938"/>
+                                <Setter Property="Foreground" Value="#F8FAFC"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#1A2214"/>
+                                <Setter Property="Foreground" Value="#B8E936"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#24243A"/>
-            <Setter Property="BorderBrush" Value="#D5D8E4"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Background" Value="#161A23"/>
+            <Setter Property="Foreground" Value="#F1F5F9"/>
+            <Setter Property="BorderBrush" Value="#262D3D"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,4"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="MinHeight" Value="32"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <Border x:Name="MainBorder" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"/>
+                            <ToggleButton x:Name="ToggleButton" Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent" BorderThickness="0">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Grid Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="28"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Path Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Data="M 0 0 L 4 4 L 8 0" Stroke="#8E98AB" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              Margin="10,4,28,4" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <TextBox x:Name="PART_EditableTextBox" Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"
+                                     Margin="2,2,28,2" Padding="8,2" Background="Transparent" BorderThickness="0"
+                                     Foreground="#F1F5F9" CaretBrush="#B8E936" VerticalContentAlignment="Center" MinHeight="0"/>
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid x:Name="DropDown" SnapsToDevicePixels="True"
+                                      MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border Background="#161A23" BorderBrush="#2E374B" BorderThickness="1" CornerRadius="6" Margin="0,3,0,0" Padding="2">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MainBorder" Property="BorderBrush" Value="#3A455E"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="MainBorder" Property="BorderBrush" Value="#B8E936"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Foreground" Value="#4E5368"/>
+            <Setter Property="Foreground" Value="#CBD5E1"/>
             <Setter Property="Margin" Value="4,3"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="Box" Width="16" Height="16" CornerRadius="4" Margin="0,0,7,0"
+                                    Background="#161A23" BorderBrush="#354057" BorderThickness="1.3" VerticalAlignment="Center">
+                                <Path x:Name="CheckMark" Visibility="Collapsed"
+                                      Data="M 3 8 L 6.5 11.5 L 12.5 4.5" Stroke="#0B0D12" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#B8E936"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#B8E936"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#B8E936"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ProgressBar}">
+            <Setter Property="Background" Value="#1E2433"/>
+            <Setter Property="Foreground" Value="#B8E936"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Grid x:Name="TemplateRoot">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="5"/>
+                            <Border x:Name="PART_Track" CornerRadius="5"/>
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" CornerRadius="5"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Background" Value="#0E1117"/>
+            <Setter Property="Foreground" Value="#2D364B"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border x:Name="ThumbBd" Background="#2B3347" CornerRadius="4" Margin="2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbBd" Property="Background" Value="#465373"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Width" Value="Auto"/>
+                                <Setter Property="MinWidth" Value="0"/>
+                                <Setter Property="Height" Value="10"/>
+                                <Setter Property="MinHeight" Value="10"/>
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="OutBox" TargetType="{x:Type TextBox}">
             <Setter Property="FontFamily" Value="Consolas"/>
             <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Background" Value="#F8FAFC"/>
-            <Setter Property="Foreground" Value="#1E2433"/>
-            <Setter Property="BorderBrush" Value="#D9DCE8"/>
+            <Setter Property="Background" Value="#0D1017"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="CaretBrush" Value="#B8E936"/>
+            <Setter Property="SelectionBrush" Value="#365314"/>
+            <Setter Property="BorderBrush" Value="#242B3A"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
@@ -107,11 +359,23 @@ $newResources = @'
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type TabControl}">
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="#11141B"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
@@ -120,12 +384,14 @@ $newResources = @'
                     <ControlTemplate TargetType="{x:Type TabControl}">
                         <Grid ClipToBounds="True" SnapsToDevicePixels="True">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="192"/>
+                                <ColumnDefinition Width="200"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,2,10,0" IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
+                            <Border Grid.Column="0" Background="#0E1118" BorderBrush="#222834" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,10,0">
+                                <StackPanel Orientation="Vertical" IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
+                            </Border>
                             <Border Grid.Column="1" Background="{TemplateBinding Background}"
-                                    BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10"
+                                    BorderBrush="#222834" BorderThickness="1" CornerRadius="10"
                                     Padding="12" MinWidth="0" MinHeight="0">
                                 <ContentPresenter x:Name="PART_SelectedContentHost"
                                                   ContentSource="SelectedContent"
@@ -140,29 +406,38 @@ $newResources = @'
 
         <Style TargetType="{x:Type TabItem}">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="Padding" Value="12,10"/>
             <Setter Property="Margin" Value="0,2"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="#55586D"/>
+            <Setter Property="Foreground" Value="#8E98AB"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type TabItem}">
-                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="ActiveBar" Grid.Column="0" Width="3" Height="16" CornerRadius="2" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1" Margin="8,0,0,0" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="#EEEAFE"/>
-                                <Setter Property="Foreground" Value="#5B4AE8"/>
+                                <Setter TargetName="TabBorder" Property="Background" Value="#1A2214"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3D1E"/>
+                                <Setter TargetName="ActiveBar" Property="Background" Value="#B8E936"/>
+                                <Setter Property="Foreground" Value="#D9F97A"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="#EAEAF4"/>
+                                <Setter TargetName="TabBorder" Property="Background" Value="#161C28"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -170,33 +445,117 @@ $newResources = @'
             </Setter>
         </Style>
 
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#161A23"/>
+            <Setter Property="Foreground" Value="#8E98AB"/>
+            <Setter Property="BorderBrush" Value="#242A38"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="{x:Type DataGridRow}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1B2230"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#1F2937"/>
+                    <Setter Property="Foreground" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="{x:Type DataGridCell}">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style TargetType="{x:Type DataGrid}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#24243A"/>
-            <Setter Property="BorderBrush" Value="#E1E3EC"/>
+            <Setter Property="Background" Value="#11141B"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#242B3A"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="RowBackground" Value="#FFFFFF"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8F9FC"/>
+            <Setter Property="RowBackground" Value="#131720"/>
+            <Setter Property="AlternatingRowBackground" Value="#161B25"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#ECECF3"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#1F2533"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="RowHeight" Value="30"/>
+            <Setter Property="RowHeight" Value="32"/>
             <Setter Property="ColumnHeaderHeight" Value="34"/>
             <Setter Property="Margin" Value="3"/>
         </Style>
 
+        <Style TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="Background" Value="#161A23"/>
+            <Setter Property="Foreground" Value="#8E98AB"/>
+            <Setter Property="BorderBrush" Value="#242A38"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style TargetType="{x:Type ListViewItem}">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1B2230"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#1A2214"/>
+                    <Setter Property="Foreground" Value="#D9F97A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style TargetType="{x:Type ListView}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#E1E3EC"/>
+            <Setter Property="Background" Value="#11141B"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#242B3A"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="3"/>
         </Style>
 
+        <Style TargetType="{x:Type ListBoxItem}">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1B2230"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#1A2214"/>
+                    <Setter Property="Foreground" Value="#B8E936"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style TargetType="{x:Type ListBox}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#E1E3EC"/>
+            <Setter Property="Background" Value="#11141B"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#242B3A"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="3"/>
+        </Style>
+
+        <Style TargetType="{x:Type GridSplitter}">
+            <Setter Property="Background" Value="#1E2433"/>
         </Style>
     </Window.Resources>
 '@
@@ -204,31 +563,31 @@ $newResources = @'
 $xaml = Replace-Once $xaml '(?s)\s*<Window\.Resources>.*?</Window\.Resources>' ([Environment]::NewLine + $newResources) 'Window.Resources'
 
 # 3. Root Grid background & spacing
-$xaml = Replace-Once $xaml '<Grid Margin="8">' '<Grid Margin="12" Background="#F4F5FA" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">' 'Root Grid'
+$xaml = Replace-Once $xaml '<Grid Margin="8">' '<Grid Margin="12" Background="#0B0D12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">' 'Root Grid'
 
-# 4. Rebuild ONLY the top connection bar (before MainTabs) into a clean card with 2 aligned rows
+# 4. Rebuild ONLY the top connection bar (before MainTabs) into a clean obsidian card with 2 aligned rows
 $mainTabsIdx = $xaml.IndexOf('<TabControl x:Name="MainTabs"', [System.StringComparison]::Ordinal)
 if ($mainTabsIdx -lt 0) { throw 'MainTabs not found.' }
 $beforeTabs = $xaml.Substring(0, $mainTabsIdx)
 $fromTabs = $xaml.Substring($mainTabsIdx)
 
 $topBar = @'
-        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="10,8" Margin="0,0,0,10">
+        <Border Grid.Row="0" Background="#11141B" BorderBrush="#222834" BorderThickness="1" CornerRadius="10" Padding="12,9" Margin="0,0,0,10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <DockPanel Grid.Row="0" LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left" Text="SSH profile:" Width="88" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                    <TextBlock DockPanel.Dock="Left" Text="SSH profile:" Width="88" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                     <ComboBox x:Name="ProfileBox" Width="320" VerticalAlignment="Center" SelectionChanged="ProfileBox_SelectionChanged"/>
                     <Button Content="Add" Click="AddProfile_Click"/>
                     <Button Content="Edit" Click="EditProfile_Click"/>
                     <Button Content="Delete" Click="DeleteProfile_Click"/>
-                    <Button x:Name="ConnectBtn" Content="Connect" FontWeight="SemiBold" Click="Connect_Click"/>
+                    <Button x:Name="ConnectBtn" Content="Connect" Style="{StaticResource AccentButton}" Click="Connect_Click"/>
                 </DockPanel>
                 <WrapPanel Grid.Row="1" Margin="0,6,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="Startup &amp; behaviour:" VerticalAlignment="Center" Margin="2,0,12,0" FontWeight="SemiBold" Foreground="#667085"/>
+                    <TextBlock Text="Startup &amp; behaviour:" VerticalAlignment="Center" Margin="2,0,12,0" FontWeight="SemiBold" Foreground="#7C869B"/>
                     <CheckBox x:Name="AutoConnectChk" Content="Auto-connect this profile on start" Margin="0,2,14,2" Click="AutoConnectChk_Click"/>
                     <CheckBox x:Name="AutoReconnectChk" Content="Auto-reconnect" Margin="0,2,14,2" Click="AutoReconnectChk_Click"/>
                     <CheckBox x:Name="StartupChk" Content="Start with Windows" Margin="0,2,14,2" Click="StartupChk_Click"/>
@@ -244,13 +603,13 @@ $topBar = @'
 $beforeTabs = Replace-Once $beforeTabs '(?s)<!-- ===== top bar: SSH profile ===== -->\s*<WrapPanel Grid\.Row="0"[^>]*>.*?</WrapPanel>\s*' ("<!-- ===== top bar: SSH profile ===== -->" + [Environment]::NewLine + $topBar) 'Top bar'
 $xaml = $beforeTabs + $fromTabs
 
-# 5. MainTabs attributes (no inline TabControl.Resources so Window.Resources TabItem template applies!)
-$xaml = Replace-Once $xaml '<TabControl x:Name="MainTabs"[^>]*>' '<TabControl x:Name="MainTabs" Grid.Row="1" Margin="0,0,0,10" SelectionChanged="MainTabs_SelectionChanged" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TabStripPlacement="Left" Background="#FFFFFF" BorderThickness="0">' 'MainTabs'
+# 5. MainTabs attributes
+$xaml = Replace-Once $xaml '<TabControl x:Name="MainTabs"[^>]*>' '<TabControl x:Name="MainTabs" Grid.Row="1" Margin="0,0,0,10" SelectionChanged="MainTabs_SelectionChanged" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TabStripPlacement="Left" Background="#11141B" BorderThickness="0">' 'MainTabs'
 
-# 6. Files (SFTP) tab spacing
+# 6. Files (SFTP) tab
 $newFilesTab = @'
             <!-- ===== Files ===== -->
-            <TabItem Header="Files (SFTP)">
+            <TabItem Header="&#x25A4;  Files (SFTP)">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -283,10 +642,10 @@ $newFilesTab = @'
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Files ===== -->\s*<TabItem Header="Files \(SFTP\)">.*?</TabItem>' $newFilesTab 'Files tab'
 
-# 7. Console (SSH) tab (3 rows: Input DockPanel, Header, Full-width Output)
+# 7. Console (SSH) tab
 $newConsoleTab = @'
             <!-- ===== Console ===== -->
-            <TabItem Header="Console (SSH)">
+            <TabItem Header="&#x2328;  Console (SSH)">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -295,7 +654,7 @@ $newConsoleTab = @'
                     </Grid.RowDefinitions>
                     <DockPanel Grid.Row="0" LastChildFill="True">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                            <Button x:Name="ConsoleRunBtn" Content="&#x25B6;  Run commands" MinWidth="126" Click="ConsoleRun_Click"/>
+                            <Button x:Name="ConsoleRunBtn" Content="&#x25B6;  Run commands" MinWidth="130" Style="{StaticResource AccentButton}" Click="ConsoleRun_Click"/>
                             <Button Content="&#x25A0;  Stop" MinWidth="80" Click="ConsoleStop_Click"/>
                             <Button Content="Clear output" MinWidth="96" Click="ConsoleClear_Click"/>
                         </StackPanel>
@@ -306,18 +665,18 @@ $newConsoleTab = @'
                                  FontFamily="Consolas" ToolTip="Paste one command per line. Click Run commands or press Ctrl+Enter to send to the shell."
                                  KeyDown="ConsoleInput_KeyDown"/>
                     </DockPanel>
-                    <TextBlock Grid.Row="1" Text="SSH TERMINAL  &#x2022;  Persistent session &#x2014; current directory and shell state are retained."
-                               Margin="3,8,3,4" FontSize="11" FontWeight="SemiBold" Foreground="#667085"/>
+                    <TextBlock Grid.Row="1" Text="SSH TERMINAL  &#x2022;  PERSISTENT SESSION &#x2014; WORKING DIRECTORY &amp; STATE RETAINED"
+                               Margin="4,8,4,4" FontSize="10.5" FontWeight="Bold" Foreground="#7C869B"/>
                     <TextBox x:Name="ConsoleOut" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="99" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="320" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Console ===== -->\s*<TabItem Header="Console \(SSH\)">.*?</TabItem>' $newConsoleTab 'Console tab'
 
-# 8. ADB devices tab (aligned 94px labels across adb.exe, Device IP:port, adb shell; GridSplitter between grid and output)
+# 8. ADB devices tab
 $newAdbTab = @'
             <!-- ===== ADB ===== -->
-            <TabItem x:Name="AdbTab" Header="ADB devices">
+            <TabItem x:Name="AdbTab" Header="&#x25A3;  ADB devices">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -330,16 +689,16 @@ $newAdbTab = @'
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0">
-                        <TextBlock DockPanel.Dock="Left" Text="adb.exe:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock DockPanel.Dock="Left" Text="adb.exe:" Width="94" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <Button DockPanel.Dock="Right" Content="Browse..." Click="AdbBrowse_Click"/>
                         <TextBox x:Name="AdbPathBox" VerticalContentAlignment="Center" IsReadOnly="True"/>
                     </DockPanel>
 
                     <DockPanel Grid.Row="1" Margin="0,4,0,0">
-                        <TextBlock DockPanel.Dock="Left" Text="Device IP:port:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock DockPanel.Dock="Left" Text="Device IP:port:" Width="94" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <Button DockPanel.Dock="Right" Content="Connect all saved" Click="AdbConnectAll_Click"/>
                         <Button DockPanel.Dock="Right" Content="Pair..." Click="AdbPair_Click"/>
-                        <Button DockPanel.Dock="Right" Content="Connect" Click="AdbConnect_Click"/>
+                        <Button DockPanel.Dock="Right" Content="Connect" Style="{StaticResource AccentButton}" Click="AdbConnect_Click"/>
                         <ComboBox x:Name="SavedDeviceBox" IsEditable="True"/>
                     </DockPanel>
 
@@ -352,7 +711,7 @@ $newAdbTab = @'
                         <Button Content="Install APK..." Click="AdbInstall_Click"/>
                         <Button Content="Screenshot" Click="AdbScreenshot_Click"/>
                         <Button Content="Reboot" Click="AdbReboot_Click"/>
-                        <TextBlock x:Name="AdbStatus" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#667085"/>
+                        <TextBlock x:Name="AdbStatus" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#8E98AB"/>
                     </WrapPanel>
 
                     <DataGrid x:Name="DeviceGrid" Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False"
@@ -369,10 +728,10 @@ $newAdbTab = @'
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <GridSplitter Grid.Row="4" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+                    <GridSplitter Grid.Row="4" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3,2" ShowsPreview="True"/>
 
                     <DockPanel Grid.Row="5" Margin="0,2,0,4">
-                        <TextBlock DockPanel.Dock="Left" Text="adb shell:" Width="94" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock DockPanel.Dock="Left" Text="adb shell:" Width="94" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <Button DockPanel.Dock="Right" Content="Run on selected" Click="AdbShell_Click"/>
                         <TextBox x:Name="AdbShellInput" VerticalContentAlignment="Center" FontFamily="Consolas" KeyDown="AdbShellInput_KeyDown"/>
                     </DockPanel>
@@ -383,10 +742,10 @@ $newAdbTab = @'
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== ADB ===== -->\s*<TabItem x:Name="AdbTab" Header="ADB devices">.*?</TabItem>' $newAdbTab 'ADB tab'
 
-# 9. Scripts tab (resizable GridSplitter, aligned Run on / Arguments labels, full-width ScriptOut)
+# 9. Scripts tab
 $newScriptsTab = @'
             <!-- ===== Scripts ===== -->
-            <TabItem Header="Scripts">
+            <TabItem Header="&#x25B6;  Scripts">
                 <Grid Margin="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="280" MinWidth="200"/>
@@ -396,7 +755,7 @@ $newScriptsTab = @'
 
                     <DockPanel Grid.Column="0">
                         <StackPanel DockPanel.Dock="Top">
-                            <TextBlock Text="Scripts folder" FontWeight="SemiBold" Foreground="#4E5368" Margin="3,2,3,2"/>
+                            <TextBlock Text="SCRIPTS FOLDER" FontSize="10.5" FontWeight="Bold" Foreground="#7C869B" Margin="3,2,3,2"/>
                             <TextBox x:Name="ScriptsFolderBox" IsReadOnly="True"/>
                             <WrapPanel Margin="0,2,0,4">
                                 <Button Content="Change..." Click="ScriptsFolder_Click"/>
@@ -409,7 +768,7 @@ $newScriptsTab = @'
                                  ToolTip="Drop .sh / .ps1 / .bat files here to add them"/>
                     </DockPanel>
 
-                    <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" ShowsPreview="True"/>
+                    <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,3" ShowsPreview="True"/>
 
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
@@ -419,27 +778,27 @@ $newScriptsTab = @'
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="82"/>
+                            <ColumnDefinition Width="84"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Run on:" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Run on:" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <ComboBox x:Name="ScriptTarget" Grid.Row="0" Grid.Column="1" SelectedIndex="0" HorizontalAlignment="Stretch" MinWidth="260">
                             <ComboBoxItem Content="Router (SSH, run with sh)"/>
                             <ComboBoxItem Content="Android device(s) (ADB - ticked in ADB tab)"/>
                             <ComboBoxItem Content="This PC (.ps1 / .bat / .cmd)"/>
                         </ComboBox>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Arguments:" VerticalAlignment="Center" Margin="2,4,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Arguments:" VerticalAlignment="Center" Margin="3,4,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
                             <Button DockPanel.Dock="Right" Content="Clear" Click="ScriptClear_Click"/>
                             <Button DockPanel.Dock="Right" Content="Edit" Click="ScriptEdit_Click"/>
                             <Button DockPanel.Dock="Right" Content="Stop" Click="ScriptStop_Click"/>
-                            <Button x:Name="ScriptRunBtn" DockPanel.Dock="Right" Content="Run" FontWeight="SemiBold" Click="ScriptRun_Click"/>
+                            <Button x:Name="ScriptRunBtn" DockPanel.Dock="Right" Content="&#x25B6;  Run" Style="{StaticResource AccentButton}" Click="ScriptRun_Click"/>
                             <TextBox x:Name="ScriptArgs" VerticalContentAlignment="Center"/>
                         </DockPanel>
 
-                        <TextBlock x:Name="ScriptDesc" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Foreground="#667085" Margin="3,6,3,6" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="ScriptDesc" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Foreground="#8E98AB" Margin="3,6,3,6" TextWrapping="Wrap"/>
                         <TextBox x:Name="ScriptOut" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="240" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                     </Grid>
                 </Grid>
@@ -447,10 +806,10 @@ $newScriptsTab = @'
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Scripts ===== -->\s*<TabItem Header="Scripts">.*?</TabItem>' $newScriptsTab 'Scripts tab'
 
-# 10. Router dashboard tab (responsive 3-column summary cards, preserved WanIfaceBox/controls)
+# 10. Router dashboard tab (Vantage obsidian cards with cyan/lime/emerald accents)
 $newDashTab = @'
             <!-- ===== Router dashboard ===== -->
-            <TabItem x:Name="DashTab" Header="Router dashboard">
+            <TabItem x:Name="DashTab" Header="&#x25C9;  Router dashboard">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -460,11 +819,11 @@ $newDashTab = @'
                     </Grid.RowDefinitions>
 
                     <WrapPanel Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,8">
-                        <TextBlock Text="WAN interface:" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock Text="WAN interface:" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <TextBox x:Name="WanIfaceBox" Width="100" VerticalContentAlignment="Center" Text="wan"/>
-                        <Button Content="Refresh now" Click="DashRefresh_Click"/>
+                        <Button Content="Refresh now" Style="{StaticResource AccentButton}" Click="DashRefresh_Click"/>
                         <CheckBox x:Name="DashAutoChk" Content="Auto-refresh (5s)" IsChecked="True" VerticalAlignment="Center" Margin="8,0,12,0"/>
-                        <TextBlock x:Name="DashStatus" VerticalAlignment="Center" Foreground="#667085"/>
+                        <TextBlock x:Name="DashStatus" VerticalAlignment="Center" Foreground="#8E98AB"/>
                     </WrapPanel>
 
                     <Grid Grid.Row="1" Margin="3,0,3,8">
@@ -475,40 +834,43 @@ $newDashTab = @'
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                        <Border Grid.Column="0" BorderBrush="#262D3D" BorderThickness="1" CornerRadius="10" Padding="15" Background="#161A23">
                             <StackPanel>
-                                <TextBlock Text="WAN" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
-                                <TextBlock x:Name="WanStatusText" Text="-" FontSize="22" FontWeight="Bold" Margin="0,4,0,2"/>
-                                <TextBlock x:Name="WanIpText" Foreground="#24243A"/>
-                                <TextBlock x:Name="WanInfoText" TextWrapping="Wrap" Foreground="#4E5368"/>
-                                <TextBlock x:Name="WanRateText" Margin="0,4,0,0" FontWeight="SemiBold" Foreground="#24243A"/>
+                                <Border Height="2" Background="#4ADE80" CornerRadius="1" Margin="0,0,0,8" Width="36" HorizontalAlignment="Left"/>
+                                <TextBlock Text="WAN UPLINK" FontWeight="Bold" FontSize="10.5" Foreground="#7C869B"/>
+                                <TextBlock x:Name="WanStatusText" Text="-" FontSize="22" FontWeight="Bold" Foreground="#4ADE80" Margin="0,4,0,4"/>
+                                <TextBlock x:Name="WanIpText" FontFamily="Consolas" Foreground="#F1F5F9"/>
+                                <TextBlock x:Name="WanInfoText" TextWrapping="Wrap" Foreground="#94A3B8" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="WanRateText" Margin="0,6,0,0" FontFamily="Consolas" FontWeight="SemiBold" Foreground="#B8E936"/>
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                        <Border Grid.Column="2" BorderBrush="#262D3D" BorderThickness="1" CornerRadius="10" Padding="15" Background="#161A23">
                             <StackPanel>
-                                <TextBlock Text="ROUTER" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
-                                <TextBlock x:Name="SysModelText" Text="-" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" Margin="0,4,0,2"/>
-                                <TextBlock x:Name="SysHostText" TextWrapping="Wrap" Foreground="#4E5368"/>
-                                <TextBlock x:Name="SysUptimeText" Foreground="#4E5368"/>
-                                <TextBlock x:Name="SysLoadText" Foreground="#4E5368"/>
-                                <ProgressBar x:Name="MemBar" Height="10" Maximum="100" Margin="0,6,0,4"/>
-                                <TextBlock x:Name="MemText" Foreground="#4E5368"/>
+                                <Border Height="2" Background="#38BDF8" CornerRadius="1" Margin="0,0,0,8" Width="36" HorizontalAlignment="Left"/>
+                                <TextBlock Text="ACCESS POINT / ROUTER" FontWeight="Bold" FontSize="10.5" Foreground="#7C869B"/>
+                                <TextBlock x:Name="SysModelText" Text="-" FontSize="16" FontWeight="Bold" Foreground="#38BDF8" TextWrapping="Wrap" Margin="0,4,0,3"/>
+                                <TextBlock x:Name="SysHostText" TextWrapping="Wrap" Foreground="#CBD5E1"/>
+                                <TextBlock x:Name="SysUptimeText" Foreground="#94A3B8" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="SysLoadText" FontFamily="Consolas" Foreground="#94A3B8"/>
+                                <ProgressBar x:Name="MemBar" Height="8" Maximum="100" Margin="0,8,0,4"/>
+                                <TextBlock x:Name="MemText" FontFamily="Consolas" FontSize="11.5" Foreground="#CBD5E1"/>
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="4" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="14" Background="#F8F9FC">
+                        <Border Grid.Column="4" BorderBrush="#262D3D" BorderThickness="1" CornerRadius="10" Padding="15" Background="#161A23">
                             <StackPanel>
-                                <TextBlock Text="WI-FI" FontWeight="Bold" FontSize="11" Foreground="#667085"/>
-                                <TextBlock x:Name="ClientsCountText" Text="-" FontSize="22" FontWeight="Bold" Margin="0,4,0,2"/>
-                                <TextBlock x:Name="ClientsBandText" TextWrapping="Wrap" Foreground="#4E5368"/>
+                                <Border Height="2" Background="#B8E936" CornerRadius="1" Margin="0,0,0,8" Width="36" HorizontalAlignment="Left"/>
+                                <TextBlock Text="WI-FI RADIOS" FontWeight="Bold" FontSize="10.5" Foreground="#7C869B"/>
+                                <TextBlock x:Name="ClientsCountText" Text="-" FontSize="22" FontWeight="Bold" Foreground="#B8E936" Margin="0,4,0,4"/>
+                                <TextBlock x:Name="ClientsBandText" FontFamily="Consolas" TextWrapping="Wrap" Foreground="#CBD5E1"/>
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="8" Margin="3,0,3,8" Background="#F8F9FC">
+                    <Border Grid.Row="2" BorderBrush="#262D3D" BorderThickness="1" CornerRadius="10" Padding="8" Margin="3,0,3,8" Background="#161A23">
                         <WrapPanel VerticalAlignment="Center">
-                            <Button x:Name="BackupBtn" Content="Back up router config now" FontWeight="SemiBold" Click="Backup_Click"/>
+                            <Button x:Name="BackupBtn" Content="Back up router config now" Style="{StaticResource AccentButton}" Click="Backup_Click"/>
                             <Button Content="Open backups folder" Click="OpenBackups_Click"/>
-                            <TextBlock x:Name="BackupInfo" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="BackupInfo" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap" Foreground="#CBD5E1"/>
                         </WrapPanel>
                     </Border>
 
@@ -529,10 +891,10 @@ $newDashTab = @'
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Router dashboard ===== -->\s*<TabItem x:Name="DashTab" Header="Router dashboard">.*?</TabItem>' $newDashTab 'DashTab'
 
-# 11. Apps (ADB) tab (aligned Device/Filter labels, GridSplitter above AppOut)
+# 11. Apps (ADB) tab
 $newAppsTab = @'
             <!-- ===== Apps (ADB) ===== -->
-            <TabItem x:Name="AppsTab" Header="Apps (ADB)">
+            <TabItem x:Name="AppsTab" Header="&#x25C7;  Apps (ADB)">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -544,13 +906,13 @@ $newAppsTab = @'
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0">
-                        <TextBlock DockPanel.Dock="Left" Text="Device:" Width="56" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
-                        <Button DockPanel.Dock="Right" Content="Load apps" FontWeight="SemiBold" Click="AppsLoad_Click"/>
+                        <TextBlock DockPanel.Dock="Left" Text="Device:" Width="56" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
+                        <Button DockPanel.Dock="Right" Content="Load apps" Style="{StaticResource AccentButton}" Click="AppsLoad_Click"/>
                         <ComboBox x:Name="AppDeviceBox" DisplayMemberPath="Label"/>
                     </DockPanel>
 
                     <WrapPanel Grid.Row="1" Margin="0,4,0,6" VerticalAlignment="Center">
-                        <TextBlock Text="Filter:" Width="56" VerticalAlignment="Center" Margin="2,0,6,0" FontWeight="SemiBold" Foreground="#4E5368"/>
+                        <TextBlock Text="Filter:" Width="56" VerticalAlignment="Center" Margin="3,0,6,0" FontWeight="SemiBold" Foreground="#94A3B8"/>
                         <TextBox x:Name="AppFilterBox" Width="240" VerticalContentAlignment="Center" TextChanged="AppFilter_Changed"/>
                         <ComboBox x:Name="AppKindBox" Width="140" SelectedIndex="0" SelectionChanged="AppFilter_Changed">
                             <ComboBoxItem Content="All apps"/>
@@ -561,7 +923,7 @@ $newAppsTab = @'
                         </ComboBox>
                         <Button Content="Tick all shown" Click="AppTickAll_Click"/>
                         <Button Content="Untick all" Click="AppUntickAll_Click"/>
-                        <TextBlock x:Name="AppStatus" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#667085"/>
+                        <TextBlock x:Name="AppStatus" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#8E98AB"/>
                     </WrapPanel>
 
                     <DataGrid x:Name="AppGrid" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column">
@@ -583,7 +945,7 @@ $newAppsTab = @'
                         <Button Content="Export APK..." Click="AppExport_Click"/>
                     </WrapPanel>
 
-                    <GridSplitter Grid.Row="4" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+                    <GridSplitter Grid.Row="4" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3,2" ShowsPreview="True"/>
 
                     <TextBox x:Name="AppOut" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
@@ -591,10 +953,10 @@ $newAppsTab = @'
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Apps \(ADB\) ===== -->\s*<TabItem x:Name="AppsTab" Header="Apps \(ADB\)">.*?</TabItem>' $newAppsTab 'AppsTab'
 
-# 12. Run history tab (restored Copy/Clear buttons, Target=* column, GridSplitter above HistoryOut)
+# 12. Run history tab
 $newHistoryTab = @'
             <!-- ===== History ===== -->
-            <TabItem Header="Run history">
+            <TabItem Header="&#x25F7;  Run history">
                 <Grid Margin="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -605,7 +967,7 @@ $newHistoryTab = @'
                     <WrapPanel Grid.Row="0" Margin="0,0,0,6" VerticalAlignment="Center">
                         <Button Content="Copy output" Click="HistoryCopy_Click"/>
                         <Button Content="Clear history" Click="HistoryClear_Click"/>
-                        <TextBlock Text="Last 200 script runs are kept." VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#667085"/>
+                        <TextBlock Text="Last 200 script runs are kept." VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#8E98AB"/>
                     </WrapPanel>
                     <DataGrid x:Name="HistoryGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                               HeadersVisibility="Column" SelectionMode="Single" SelectionChanged="HistoryGrid_SelectionChanged">
@@ -617,7 +979,7 @@ $newHistoryTab = @'
                             <DataGridTextColumn Header="Duration" Binding="{Binding DurationText}" Width="95"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <GridSplitter Grid.Row="2" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
+                    <GridSplitter Grid.Row="2" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="3,2" ShowsPreview="True"/>
                     <TextBox x:Name="HistoryOut" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
@@ -627,7 +989,7 @@ $xaml = Replace-Once $xaml '(?s)<!-- ===== History ===== -->\s*<TabItem Header="
 # 13. Log tab
 $newLogTab = @'
             <!-- ===== Log ===== -->
-            <TabItem Header="Log">
+            <TabItem Header="&#x2261;  Log">
                 <TextBox x:Name="LogBox" Margin="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Style="{StaticResource OutBox}"/>
             </TabItem>
 '@
@@ -635,9 +997,9 @@ $xaml = Replace-Once $xaml '(?s)<!-- ===== Log ===== -->\s*<TabItem Header="Log"
 
 # 14. StatusBar styling
 $newStatusBar = @'
-        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="8" Padding="10,5">
+        <Border Grid.Row="2" Background="#11141B" BorderBrush="#222834" BorderThickness="1" CornerRadius="8" Padding="12,5">
             <StatusBar Background="Transparent" BorderThickness="0">
-                <TextBlock x:Name="StatusText" Text="Disconnected" Foreground="#4E5368"/>
+                <TextBlock x:Name="StatusText" Text="Disconnected" Foreground="#94A3B8" FontFamily="Consolas" FontSize="12"/>
             </StatusBar>
         </Border>
 '@
@@ -662,4 +1024,4 @@ if ($code -notmatch 'ConsoleClear_Click') {
     Set-Content -Path $codePath -Value $code -Encoding UTF8
 }
 
-Write-Host 'Console layout, unified light palette, aligned grids/labels, resizable splitters, and ConsoleClear_Click applied.'
+Write-Host 'Applied Vantage obsidian dark theme, aligned layout, and splitters.'

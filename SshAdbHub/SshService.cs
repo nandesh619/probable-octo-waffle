@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Text.RegularExpressions;
+using System.Text;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 
@@ -202,12 +203,16 @@ public sealed class SshService : IDisposable
         _shell.Flush();
     }
 
+    private static readonly Regex AnsiRx = new(@"\x1B(?:\][^\x07\x1B]*(?:\x07|\x1B\\)|\[[0-9;?]*[ -/]*[@-~])", RegexOptions.Compiled);
+
     public string ReadShellOutput()
     {
         if (!ShellStarted || !_shell!.DataAvailable) return "";
         var buffer = new byte[8192];
         var count = _shell.Read(buffer, 0, buffer.Length);
-        return count > 0 ? Encoding.UTF8.GetString(buffer, 0, count) : "";
+        if (count <= 0) return "";
+        var raw = Encoding.UTF8.GetString(buffer, 0, count);
+        return AnsiRx.Replace(raw, "");
     }
 
     public void InterruptShell()

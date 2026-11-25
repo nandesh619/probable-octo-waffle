@@ -11,6 +11,7 @@
     <AssemblyName>SshAdbHub</AssemblyName>
     <RootNamespace>SshAdbHub</RootNamespace>
     <Version>0.2.0</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,10 @@
   <ItemGroup>
     <!-- Sample scripts are copied next to the exe and are NOT bundled into the single file -->
     <Content Include="scripts\**\*.*" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="app.ico" />
   </ItemGroup>
 
 </Project>
