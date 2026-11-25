@@ -18,6 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Assign build number
+        shell: pwsh
+        run: |
+          $buildNumber = "{0:D4}" -f [int]$env:GITHUB_RUN_NUMBER
+          "BUILD_NUMBER=$buildNumber" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SSH + ADB Hub build $buildNumber" | Set-Content -Path BUILD.txt -Encoding utf8
+          Write-Host "Building SSH + ADB Hub build $buildNumber"
+
       - name: Expand reviewed source archive when present
         shell: pwsh
         run: |
@@ -75,11 +83,14 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          Compress-Archive -Path publish/* -DestinationPath SSH-ADB-Hub-win-x64.zip -Force
+          Copy-Item BUILD.txt publish/BUILD.txt -Force
+          $archiveName = "SSH-ADB-Hub-build-$env:BUILD_NUMBER-win-x64.zip"
+          Compress-Archive -Path publish/* -DestinationPath $archiveName -Force
+          "BUILD_ARCHIVE=$archiveName" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
         with:
-          name: SSH-ADB-Hub-win-x64
-          path: SSH-ADB-Hub-win-x64.zip
+          name: SSH-ADB-Hub-build-${{ env.BUILD_NUMBER }}-win-x64
+          path: ${{ env.BUILD_ARCHIVE }}
           retention-days: 14
