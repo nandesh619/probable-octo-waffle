@@ -107,7 +107,7 @@ $newResources = @'
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Margin" Value="3"/>
         </Style>
 
         <Style TargetType="{x:Type TabControl}">
@@ -142,7 +142,8 @@ $newResources = @'
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="Padding" Value="14,11"/>
             <Setter Property="Margin" Value="0,2"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="#55586D"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -152,7 +153,7 @@ $newResources = @'
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type TabItem}">
                         <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
@@ -181,21 +182,21 @@ $newResources = @'
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="RowHeight" Value="30"/>
             <Setter Property="ColumnHeaderHeight" Value="34"/>
-            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Margin" Value="3"/>
         </Style>
 
         <Style TargetType="{x:Type ListView}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E1E3EC"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Margin" Value="3"/>
         </Style>
 
         <Style TargetType="{x:Type ListBox}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E1E3EC"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Margin" Value="3"/>
         </Style>
     </Window.Resources>
 '@
@@ -307,7 +308,7 @@ $newConsoleTab = @'
                     </DockPanel>
                     <TextBlock Grid.Row="1" Text="SSH TERMINAL  &#x2022;  Persistent session &#x2014; current directory and shell state are retained."
                                Margin="3,8,3,4" FontSize="11" FontWeight="SemiBold" Foreground="#667085"/>
-                    <TextBox x:Name="ConsoleOut" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="99" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="320" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                    <TextBox x:Name="ConsoleOut" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="99" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="320" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
 '@
@@ -376,7 +377,7 @@ $newAdbTab = @'
                         <TextBox x:Name="AdbShellInput" VerticalContentAlignment="Center" FontFamily="Consolas" KeyDown="AdbShellInput_KeyDown"/>
                     </DockPanel>
 
-                    <TextBox x:Name="AdbOut" Grid.Row="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                    <TextBox x:Name="AdbOut" Grid.Row="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
 '@
@@ -439,7 +440,7 @@ $newScriptsTab = @'
                         </DockPanel>
 
                         <TextBlock x:Name="ScriptDesc" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Foreground="#667085" Margin="3,6,3,6" TextWrapping="Wrap"/>
-                        <TextBox x:Name="ScriptOut" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="240" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                        <TextBox x:Name="ScriptOut" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="240" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                     </Grid>
                 </Grid>
             </TabItem>
@@ -466,7 +467,7 @@ $newDashTab = @'
                         <TextBlock x:Name="DashStatus" VerticalAlignment="Center" Foreground="#667085"/>
                     </WrapPanel>
 
-                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                    <Grid Grid.Row="1" Margin="3,0,3,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="10"/>
@@ -503,7 +504,7 @@ $newDashTab = @'
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,8" Background="#F8F9FC">
+                    <Border Grid.Row="2" BorderBrush="#E1E3EC" BorderThickness="1" CornerRadius="10" Padding="8" Margin="3,0,3,8" Background="#F8F9FC">
                         <WrapPanel VerticalAlignment="Center">
                             <Button x:Name="BackupBtn" Content="Back up router config now" FontWeight="SemiBold" Click="Backup_Click"/>
                             <Button Content="Open backups folder" Click="OpenBackups_Click"/>
@@ -584,7 +585,7 @@ $newAppsTab = @'
 
                     <GridSplitter Grid.Row="4" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
 
-                    <TextBox x:Name="AppOut" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                    <TextBox x:Name="AppOut" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
 '@
@@ -617,7 +618,7 @@ $newHistoryTab = @'
                         </DataGrid.Columns>
                     </DataGrid>
                     <GridSplitter Grid.Row="2" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"/>
-                    <TextBox x:Name="HistoryOut" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,2,0,0" Style="{StaticResource OutBox}"/>
+                    <TextBox x:Name="HistoryOut" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3,2,3,3" Style="{StaticResource OutBox}"/>
                 </Grid>
             </TabItem>
 '@
@@ -627,7 +628,7 @@ $xaml = Replace-Once $xaml '(?s)<!-- ===== History ===== -->\s*<TabItem Header="
 $newLogTab = @'
             <!-- ===== Log ===== -->
             <TabItem Header="Log">
-                <TextBox x:Name="LogBox" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Style="{StaticResource OutBox}"/>
+                <TextBox x:Name="LogBox" Margin="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Style="{StaticResource OutBox}"/>
             </TabItem>
 '@
 $xaml = Replace-Once $xaml '(?s)<!-- ===== Log ===== -->\s*<TabItem Header="Log">.*?</TabItem>' $newLogTab 'Log tab'

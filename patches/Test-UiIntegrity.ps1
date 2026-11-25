@@ -35,6 +35,7 @@ if ($tabItemStyles -ne 1) { throw "Expected exactly one implicit TabItem style; 
 if ($xaml -notmatch 'x:Name="ConsoleOut"[^>]*Grid.Row="2"[^>]*Grid.ColumnSpan="99"') { throw 'Console output is not configured to stretch across the workspace.' }
 if ($xaml -notmatch 'x:Name="ConsoleInput"[^>]*AcceptsReturn="True"') { throw 'Console input is not multiline.' }
 if ($xaml -notmatch '<TabControl x:Name="MainTabs"[^>]*HorizontalContentAlignment="Stretch"[^>]*VerticalContentAlignment="Stretch"') { throw 'MainTabs content is not configured to stretch.' }
+if ($xaml -match '<Style TargetType="\{x:Type TabItem\}">[\s\S]*?<Setter Property="HorizontalContentAlignment" Value="Left"/>') { throw 'TabItem HorizontalContentAlignment must be Stretch so selected tab content fills the pane.' }
 if ($xaml -notmatch '<GridSplitter') { throw 'Expected GridSplitter for resizable panes.' }
 
 Write-Host 'PASS: XAML parses, zero duplicate x:Name, event handlers verified, single Button/TabItem styles, full-width layouts and GridSplitters verified.'
