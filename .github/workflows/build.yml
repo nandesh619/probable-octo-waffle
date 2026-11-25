@@ -1,0 +1,85 @@
+name: Build SSH ADB Hub
+# Source archive and all patch scripts are kept at repository root for reproducible builds.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Expand reviewed source archive when present
+        shell: pwsh
+        run: |
+          if (Test-Path "SshAdbHub-reviewed.zip") {
+            Expand-Archive -Path "SshAdbHub-reviewed.zip" -DestinationPath source-archive -Force
+            Copy-Item "source-archive/SshAdbHub/SshAdbHub" -Destination "." -Recurse -Force
+            if (Test-Path "source-archive/SshAdbHub/README.md") {
+              Copy-Item "source-archive/SshAdbHub/README.md" -Destination "README.md" -Force
+            }
+          }
+          if (-not (Test-Path "SshAdbHub/SshAdbHub.csproj")) {
+            throw "Source missing. Upload SshAdbHub-reviewed.zip to the repository root, then rerun this workflow."
+          }
+
+      - name: Apply source compatibility and security fixes
+        shell: pwsh
+        run: ./patches/Apply-BuildFixes.ps1
+
+      - name: Apply console and GUI improvements
+        shell: pwsh
+        run: ./patches/Apply-Console-Gui.ps1
+
+      - name: Apply persistent interactive SSH shell
+        shell: pwsh
+        run: ./patches/Apply-Persistent-Shell.ps1
+
+      - name: Apply light dashboard and navigation
+        shell: pwsh
+        run: ./patches/Apply-Dark-Dashboard.ps1
+
+      - name: Validate XAML and UI event handlers
+        shell: pwsh
+        run: ./patches/Test-UiIntegrity.ps1
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore SshAdbHub/SshAdbHub.csproj
+
+      - name: Publish Windows x64
+        run: dotnet publish SshAdbHub/SshAdbHub.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+
+      - name: Download Android platform tools
+        shell: pwsh
+        run: |
+          $url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+          Invoke-WebRequest -Uri $url -OutFile platform-tools.zip
+          Expand-Archive platform-tools.zip -DestinationPath .
+          Copy-Item platform-tools publish/platform-tools -Recurse -Force
+          if (-not (Test-Path "publish/platform-tools/adb.exe")) { throw "adb.exe missing from publish output" }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish/* -DestinationPath SSH-ADB-Hub-win-x64.zip -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: SSH-ADB-Hub-win-x64
+          path: SSH-ADB-Hub-win-x64.zip
+          retention-days: 14
