@@ -247,7 +247,28 @@ $topBar = @'
             </WrapPanel>
         </Grid>
 '@
-$xaml = [regex]::Replace($xaml, '(?s)<WrapPanel Grid.Row="0"[^>]*>.*?</WrapPanel>', [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $topBar.Trim() }, 1)
+# Replace the existing connection bar by locating its actual named controls.
+# Do not replace an unrelated Grid.Row=0 WrapPanel (which caused duplicate x:Name fields).
+$topBarPattern = '(?s)<WrapPanel\\b[^>]*>.*?</WrapPanel>'
+$topBarMatches = [regex]::Matches($xaml, $topBarPattern)
+$topBarMatch = $null
+foreach ($candidate in $topBarMatches) {
+    $candidateText = $candidate.Value
+    if ($candidateText -match 'x:Name="ProfileBox"' -and
+        $candidateText -match 'x:Name="ConnectBtn"' -and
+        $candidateText -match 'x:Name="AutoConnectChk"' -and
+        $candidateText -match 'x:Name="AutoReconnectChk"' -and
+        $candidateText -match 'x:Name="StartupChk"' -and
+        $candidateText -match 'x:Name="StartMinChk"' -and
+        $candidateText -match 'x:Name="CloseTrayChk"') {
+        $topBarMatch = $candidate
+        break
+    }
+}
+if ($null -eq $topBarMatch) {
+    throw 'Could not uniquely locate the original SSH connection bar containing all seven named controls. Refusing to insert duplicate WPF controls.'
+}
+$xaml = $xaml.Substring(0, $topBarMatch.Index) + $topBar.Trim() + $xaml.Substring($topBarMatch.Index + $topBarMatch.Length)
 
 $xaml = $xaml.Replace('Margin="0,6,0,6" SelectionChanged="MainTabs_SelectionChanged"','Margin="0,8,0,8" SelectionChanged="MainTabs_SelectionChanged"')
 
